@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Create Project Event Schema",
+  "description": "Create project event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:project:project:created"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["projectID", "name", "trigger", "triggerID"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "projectID": {
+          "type": "string",
+          "description": "Event-associated project ID."
+        },
+        "name": {
+          "type": "string",
+          "description": "Event-associated project name."
+        },
+        "trigger": {
+          "type": "string",
+          "enum": ["createdByTemplate", "copyProject"],
+          "description": "Triggers for creating project entries: Create project by template (createdByTemplate), Copy project (copyProject)."
+        },
+        "triggerID": {
+          "type": "string",
+          "description": "Trigger resource ID for creating project entries: Template ID, Source Project ID."
+        }
+      }
+    }
+  }
+}

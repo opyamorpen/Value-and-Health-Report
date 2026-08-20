@@ -1,0 +1,52 @@
+---
+id: externally-hosted-app
+sidebar_position: 1
+---
+
+import Link from '@docusaurus/Link'
+
+# Externally Hosted App
+
+:::info
+Most developers should build apps as **ONES-Hosted Apps**. See **[Getting Started](../../getting-started/getting-started.mdx)**.
+
+Externally hosted apps are only recommended for specific scenarios, such as when you use ONES Cloud but still need to deploy your app on your own infrastructure.
+:::
+
+## What Is an Externally Hosted App?
+
+An Externally Hosted App is an app that runs on your own infrastructure.
+
+Instead of packaging your app as a `.opkx` file and uploading it to ONES, you deploy your application on your own servers and provide ONES with a publicly accessible URL.
+
+## When to Use Externally Hosted Apps
+
+Externally hosted apps are suitable for the following scenarios:
+
+- **Custom Infrastructure**: You have existing infrastructure and want to deploy ONES apps alongside other services
+- **Network Requirements**: Your app needs to be deployed in a specific network environment (e.g., internal network, VPN)
+- **Compliance Requirements**: Your organization requires apps to run on-premises or in specific regions
+- **Integration Needs**: Your app needs to integrate with local services or databases that cannot be accessed from ONES-hosted infrastructure
+
+## Differences from ONES-Hosted Apps
+
+| Aspect                 | ONES-Hosted App             | Externally Hosted App      |
+| ---------------------- | --------------------------- | -------------------------- |
+| **Deployment**         | Upload `.opkx` file to ONES | Deploy on your own servers |
+| **Infrastructure**     | Managed by ONES             | Managed by you             |
+| **Development**        | Develop with `ones` CLI     | Use any web framework      |
+| **Scaling**            | Handled by ONES             | Your responsibility        |
+| **ONES Cloud Support** | No                          | Yes                        |
+
+## Get Started with Local Development
+
+Use the local development guide to build and validate your externally hosted app before production deployment:
+
+<div className="margin-top--md">
+  <Link className="externally-hosted-app-cta" to="./externally-hosted-app-local-development">
+    <span>Start Local Development</span>
+    <span className="externally-hosted-app-cta__arrow" aria-hidden="true">
+      &rarr;
+    </span>
+  </Link>
+</div>

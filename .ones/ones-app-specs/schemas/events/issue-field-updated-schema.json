@@ -1,0 +1,208 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Update Issue Field Event Schema",
+  "description": "Update issue field event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:setting:issue-field:updated"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["id", "propertyTypeLabel"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "id": {
+          "type": "string",
+          "description": "ID of the issue field associated with the event."
+        },
+        "propertyTypeLabel": {
+          "type": "string",
+          "enum": [
+            "appear_time",
+            "date",
+            "department_list",
+            "float",
+            "integer",
+            "multi_line_text",
+            "multi_option",
+            "option",
+            "project_list",
+            "sprint",
+            "stay_count",
+            "stay_time",
+            "step_range",
+            "text",
+            "time",
+            "user",
+            "user_list"
+          ],
+          "description": "Type label of the issue field."
+        },
+        "basicInfoChanges": {
+          "$ref": "#/definitions/BasicInfoChanges",
+          "description": "Basic information change of the issue field."
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Option"
+          },
+          "description": "Option changes which are valid for 'option' or 'multi_option' type of the issue field."
+        },
+        "stepRange": {
+          "$ref": "#/definitions/StepRange",
+          "description": "Step range change, which is valid for 'step_range' type of the issue field."
+        },
+        "appearTime": {
+          "$ref": "#/definitions/FieldWithMethodChange",
+          "description": "Appear time change, which is valid for 'step_range' type of the issue field."
+        },
+        "stay": {
+          "$ref": "#/definitions/FieldChange",
+          "description": "Stay change, which is valid for 'stay_time' or 'stay_count' type of the issue field."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "BasicInfoChanges": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/Name"
+        }
+      }
+    },
+    "Name": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "type": "string",
+          "description": "Old name of the issue field associated with the event."
+        },
+        "newValue": {
+          "type": "string",
+          "description": "New name of the issue field associated with the event."
+        }
+      }
+    },
+    "Option": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "type": "string",
+          "description": "Original option value of the issue field."
+        },
+        "newValue": {
+          "type": "string",
+          "description": "New option value of the issue field."
+        }
+      }
+    },
+    "StepRange": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "$ref": "#/definitions/FieldWithMethodChange",
+          "description": "Start time change of the issue field."
+        },
+        "end": {
+          "$ref": "#/definitions/FieldWithMethodChange",
+          "description": "End time change of the issue field."
+        }
+      }
+    },
+    "FieldWithMethodChange": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "$ref": "#/definitions/FieldWithMethod",
+          "description": "Original value of the issue field."
+        },
+        "newValue": {
+          "$ref": "#/definitions/FieldWithMethod",
+          "description": "New value of the issue field."
+        }
+      }
+    },
+    "FieldWithMethod": {
+      "type": "object",
+      "properties": {
+        "fieldType": {
+          "type": "string",
+          "description": "Type of the issue field."
+        },
+        "fieldID": {
+          "type": "string",
+          "description": "ID of the issue field associated with the event."
+        },
+        "fieldOptionID": {
+          "type": "string",
+          "description": "Option id of the issue field."
+        },
+        "method": {
+          "type": "string",
+          "enum": ["first_at", "last_at"],
+          "description": "first_at: the first appear time，last_at: the last appear time"
+        }
+      }
+    },
+    "FieldChange": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "$ref": "#/definitions/Field",
+          "description": "Original value of the issue field."
+        },
+        "newValue": {
+          "$ref": "#/definitions/Field",
+          "description": "New value of the issue field."
+        }
+      }
+    },
+    "Field": {
+      "type": "object",
+      "properties": {
+        "fieldType": {
+          "type": "string",
+          "description": "Type of the issue field."
+        },
+        "fieldID": {
+          "type": "string",
+          "description": "ID of the issue field associated with the event."
+        },
+        "fieldOptionID": {
+          "type": "string",
+          "description": "Option id of the issue field."
+        }
+      }
+    }
+  }
+}

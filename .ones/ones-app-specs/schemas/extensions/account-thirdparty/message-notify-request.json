@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Message Notify Request",
+  "type": "object",
+  "properties": {
+    "org_uuid": {
+      "type": "string",
+      "description": "ONES organization UUID"
+    },
+    "to_users": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Receiver identifiers (ONES user UUID or custom third-party ID based on notificationUserIdType)"
+    },
+    "message_data": {
+      "type": "object",
+      "properties": {
+        "context": {
+          "type": "object",
+          "properties": {
+            "team_uuid": { "type": "string" },
+            "project_uuid": { "type": "string" },
+            "task_uuids": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
+        },
+        "title": { "type": "string" },
+        "desc": { "type": "string" },
+        "url": { "type": "string", "format": "uri" }
+      },
+      "required": ["title", "desc", "url"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["org_uuid", "to_users", "message_data"],
+  "additionalProperties": false
+}

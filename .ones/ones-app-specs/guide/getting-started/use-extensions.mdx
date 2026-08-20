@@ -1,0 +1,144 @@
+---
+id: app-extensions
+sidebar_position: 3
+---
+
+# Use Extensions
+
+## Overview
+
+In this chapter, you will build an extension on top of the same template app created in [Getting Started](../getting-started/).
+
+You will complete one small milestone:
+
+1. Build a minimal **Hello Extension** page (fast success in a few minutes).
+
+This helps you understand the core extension flow clearly:
+
+- Declare extension in `opkx.json`
+- Return extension tabs from backend `customEntries`
+- Render extension pages from `web/pages/*`
+
+## Before You Start
+
+- You already have a template app created by `ones create my-ones-app` according to the [Getting Started](../getting-started/) guide.
+- You can build and install the app in ONES.
+
+## Check the Key Configuration in Manifest
+
+1. Update `version` in `app` to a new version `v0.0.4`.
+2. The template already contains this extension declaration in `opkx.json`:
+
+```json title="opkx.json"
+{
+  "app": {
+    "version": "v0.0.4",
+    "extensions": {
+      "appSettingPages": [
+        {
+          "key": "entries",
+          "funcs": {
+            "customEntries": "/app_setting_entries"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+## Build a Hello Extension Page
+
+### 1. Return a new tab from backend
+
+Edit `backend/app.controller.ts` and **add a new entry** in the existing `buildCustomEntries()` function.
+
+> **Do not** remove existing pages `Recent Work Items`.
+
+```ts title="backend/app.controller.ts"
+  private buildCustomEntries() {
+    return {
+      entries: [
+        {
+          title: 'Recent Work Items',
+          page_url: createWebPageURL('recent-work-items.html'),
+        },
+        // Add this item
+        {
+          title: 'Hello Extension',
+          page_url: createWebPageURL('hello-extension.html'),
+        },
+      ],
+    }
+  }
+```
+
+### 2. Create the page
+
+Create `web/pages/hello-extension/index.tsx`:
+
+```tsx title="web/pages/hello-extension/index.tsx"
+import { ONES } from '@ones-open/web-sdk'
+import { useEffect, useState } from 'react'
+import ReactDOM from 'react-dom'
+
+const App = () => {
+  useEffect(() => {
+    const loading = document.querySelector('.ones-app-loading')
+    loading?.remove()
+  }, [])
+
+  const [locale, setLocale] = useState('en')
+  const [teamID, setTeamID] = useState('')
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const [nextLocale, teamInfo] = await Promise.all([ONES.getLocale(), ONES.getTeamInfo()])
+        setLocale(nextLocale)
+        setTeamID(teamInfo.teamUUID)
+      } catch {
+        // ignore errors in demo page
+      }
+    })()
+  }, [])
+
+  return (
+    <div style={{ padding: 16, fontFamily: 'sans-serif' }}>
+      <h2>Hello Extension</h2>
+      <p>Your extension page is working.</p>
+      <p>Locale: {locale}</p>
+      <p>Team: {teamID || '(unknown)'}</p>
+    </div>
+  )
+}
+
+ReactDOM.render(<App />, document.getElementById('root'))
+```
+
+### 3. Build and verify
+
+1. Run `ones build`
+2. Update(upload) the latest `.opkx` package in ONES App Center
+3. Check your app backend logs in app's runtime info.
+
+You should see a tab named **Hello Extension**.
+
+![Hello Extension](/images/developer/getting-started-images/hello-extension.png)
+
+:::tip
+The template app already includes a complete `recent-work-items` example.  
+You can explore it in `web/pages/recent-work-items/index.tsx` and `backend/app.controller.ts`.
+:::
+
+## Troubleshooting
+
+- **Tab is not shown**: check `app.extensions.appSettingPages` and re-upload the new package
+- **Page is blank**: check `page_url` and ensure the file exists as `web/pages/<name>/index.tsx`
+- **Entry not found in dev logs**: `hello-extension.html` must match folder name `hello-extension`
+
+## Next Steps
+
+- Learn more in [App Setting Pages](../../abilities/extensions/app-setting-pages.mdx)
+- Explore more extension types in [Extensions](../../abilities/extensions/)
+- Continue with [Use Web SDK](./app-websdk)

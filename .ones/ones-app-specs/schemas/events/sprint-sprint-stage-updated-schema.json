@@ -1,0 +1,165 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Update Sprint Sprint-Stage Event Schema",
+  "description": "Update sprint sprint-stage event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:project:sprint:sprint-stage:updated"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["id", "projectID", "sprintID", "category"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "projectID": {
+          "type": "string",
+          "description": "ID of the project associated with the event."
+        },
+        "sprintID": {
+          "type": "string",
+          "description": "ID of a sprint."
+        },
+        "id": {
+          "type": "string",
+          "description": "ID of the sprint stage."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the stage."
+        },
+        "basicInfoChanges": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/BasicInfoChanges"
+          },
+          "description": "Sprint basic information change content."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "BasicInfoChanges": {
+      "type": "object",
+      "properties": {
+        "planStartTime": {
+          "$ref": "#/definitions/PlanStartTime"
+        },
+        "planEndTime": {
+          "$ref": "#/definitions/PlanEndTime"
+        },
+        "actualStartTime": {
+          "$ref": "#/definitions/ActualStartTime"
+        },
+        "actualEndTime": {
+          "$ref": "#/definitions/ActualEndTime"
+        },
+        "description": {
+          "$ref": "#/definitions/Description"
+        }
+      }
+    },
+    "PlanStartTime": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "type": "number",
+          "description": "Original sprint plan start time."
+        },
+        "newValue": {
+          "type": "number",
+          "description": "New sprint plan start time."
+        }
+      }
+    },
+    "PlanEndTime": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "type": "number",
+          "description": "Original sprint plan end time."
+        },
+        "newValue": {
+          "type": "number",
+          "description": "New sprint plan end time."
+        }
+      }
+    },
+    "ActualStartTime": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "type": "number",
+          "description": "Original sprint actual start time."
+        },
+        "newValue": {
+          "type": "number",
+          "description": "New sprint actual start time."
+        }
+      }
+    },
+    "ActualEndTime": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "type": "number",
+          "description": "Original sprint actual end time."
+        },
+        "newValue": {
+          "type": "number",
+          "description": "New sprint actual end time."
+        }
+      }
+    },
+    "Description": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "type": "string",
+          "description": "Original sprint description."
+        },
+        "newValue": {
+          "type": "string",
+          "description": "New sprint description."
+        }
+      }
+    },
+    "ValueChange": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "description": "Original value"
+        },
+        "newValue": {
+          "description": "New value"
+        }
+      }
+    }
+  }
+}

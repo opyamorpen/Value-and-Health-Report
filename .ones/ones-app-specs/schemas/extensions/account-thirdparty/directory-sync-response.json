@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Directory Sync Response",
+  "type": "object",
+  "properties": {
+    "users": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "$ref": "/extensions/account-thirdparty/auth-login-info-response.json"
+      },
+      "description": "Users list which is synced from your system",
+      "minItems": 1
+    },
+    "departments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "third_party_department_id": {
+            "type": "string",
+            "description": "The department id which is unique in your system"
+          },
+          "name": { "type": "string", "description": "The department name" },
+          "parent_id": {
+            "type": "string",
+            "description": "The parent department id which your defined, if empty, department will be in the root department(same as value `-1`)"
+          },
+          "next_id": {
+            "type": "string",
+            "description": "The next department which behind this department in the hierarchy"
+          }
+        },
+        "required": ["third_party_department_id", "name"],
+        "description": "Departments list which is synced from your system, it must contain the root department wiht id `-1`"
+      },
+      "minItems": 1
+    }
+  },
+  "required": ["users", "departments"],
+  "additionalProperties": false
+}

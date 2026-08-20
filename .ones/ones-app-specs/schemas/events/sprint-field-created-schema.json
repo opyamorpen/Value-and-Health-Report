@@ -1,0 +1,133 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Create Sprint Field Event Schema",
+  "description": "Create sprint field event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:project:sprint-field:created"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["id", "projectID", "name", "trigger", "propertyTypeLabel"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "id": {
+          "type": "string",
+          "description": "ID of the sprint field with the event."
+        },
+        "projectID": {
+          "type": "string",
+          "description": "ID of the project associated with the event."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the sprint field."
+        },
+        "trigger": {
+          "type": "string",
+          "enum": ["sprintFieldCreated", "copyProject"],
+          "description": "Triggers for creating sprint field entries: Create sprint field (sprintFieldCreated), Copy project (copyProject)."
+        },
+        "propertyTypeLabel": {
+          "type": "string",
+          "enum": ["option", "text", "integer", "float", "date", "time", "user", "multiLineText"],
+          "description": "Type of a sprint field."
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Required or optional."
+        },
+        "defaultValue": {
+          "$ref": "#/definitions/DefaultValue",
+          "description": "Sprint field default value."
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Option"
+          },
+          "description": "Sprint field option value."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "DefaultValue": {
+      "type": "object",
+      "properties": {
+        "stringValue": {
+          "type": "string",
+          "description": "String value"
+        },
+        "numberValue": {
+          "type": "number",
+          "description": "Numeric value"
+        },
+        "entityValue": {
+          "$ref": "#/definitions/EntityRef",
+          "description": "Entity value"
+        },
+        "entityArray": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EntityRef"
+          },
+          "description": "Entity array"
+        }
+      }
+    },
+    "EntityRef": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Entity ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Entity name"
+        }
+      }
+    },
+    "Option": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID of the option"
+        },
+        "value": {
+          "description": "Value of the option"
+        }
+      }
+    }
+  }
+}

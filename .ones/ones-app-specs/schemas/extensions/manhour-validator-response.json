@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ones.com/schemas/extensions/manhour-validator-response.json",
+  "title": "Manhour Validator Response",
+  "description": "Response schema for manhour validator endpoint",
+  "oneOf": [
+    {
+      "title": "Success Response",
+      "description": "Empty object for successful validation",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    {
+      "title": "Error Response",
+      "description": "Error details when validation fails",
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "object",
+          "description": "Error details when validation fails",
+          "properties": {
+            "reason": {
+              "type": "string",
+              "description": "Human-readable error message describing why validation failed, this will be shown to the user",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "level": {
+              "type": "string",
+              "description": "Error level, typically 'error'",
+              "enum": ["error", "warning", "info"]
+            }
+          },
+          "required": ["reason", "level"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["error"],
+      "additionalProperties": false
+    }
+  ]
+}

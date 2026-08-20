@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Create Milestone Event Schema",
+  "description": "Create milestone event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:project:ppm-milestone:created"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["id", "projectID"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "id": {
+          "type": "string",
+          "description": "ID of the milestone with the event."
+        },
+        "projectID": {
+          "type": "string",
+          "description": "ID of the project associated with the event."
+        },
+        "basicInfoChanges": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/BasicInfoChanges"
+          },
+          "description": "Change of basic information of milestone."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "BasicInfoChanges": {
+      "type": "object",
+      "properties": {
+        "assign": {
+          "$ref": "#/definitions/ValueChange"
+        },
+        "description": {
+          "$ref": "#/definitions/ValueChange"
+        },
+        "endTime": {
+          "$ref": "#/definitions/ValueChange"
+        },
+        "isComplete": {
+          "$ref": "#/definitions/ValueChange"
+        },
+        "name": {
+          "$ref": "#/definitions/ValueChange"
+        },
+        "owner": {
+          "$ref": "#/definitions/ValueChange"
+        }
+      }
+    },
+    "ValueChange": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "description": "Original value"
+        },
+        "newValue": {
+          "description": "New value"
+        }
+      }
+    }
+  }
+}

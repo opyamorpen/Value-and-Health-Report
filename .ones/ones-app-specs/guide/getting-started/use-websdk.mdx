@@ -1,0 +1,192 @@
+---
+id: app-websdk
+sidebar_position: 4
+---
+
+# Use Web SDK
+
+## Overview
+
+In this chapter, you will upgrade the **Hello Extension** page from [Use Extensions](./use-extensions.mdx) into a small Web SDK demo.
+
+You will complete one small milestone:
+
+1. On one page, get current user/team context, call ONES OpenAPI and your app backend API, then show the result with a toast.
+
+This helps you understand the core Web SDK flow:
+
+- Get context with `ONES.getTeamInfo()` and `ONES.getUserInfo()`
+- Call platform OpenAPI with `ONES.fetchOpenAPI()` using that context
+- Call your app's API with `ONES.fetchApp()`
+- Show feedback with `ONES.UI.toast()`
+
+## Before You Start
+
+- You already have a template app created by `ones create my-ones-app` according to the [Getting Started](../getting-started/) guide.
+- You can build and install the app in ONES.
+- You have already created an extension with a web page (see [Build a Hello Extension Page](./use-extensions.mdx#build-a-hello-extension-page)).
+- Your current `web/pages/hello-extension/index.tsx` still shows basic info like locale/team (the result from the previous chapter).
+
+## Update OAuth Scope for OpenAPI
+
+1. Update `version` in `app` to a new version `v0.0.5`.
+2. To call project APIs like `/v2/project/projects`, add `read:project:project` in `app.oauth.scope`.
+
+```json title="opkx.json"
+{
+  "app": {
+    "version": "v0.0.5",
+    "oauth": {
+      "scope": ["read:account:teams", "read:project:project"],
+      "type": ["user", "app"]
+    }
+  }
+}
+```
+
+:::tip
+Keep your existing manifest fields unchanged (`events`, `extensions`, `ones.storage`, etc.). Only append the new scope.
+:::
+
+## Update the Hello Extension Page
+
+Replace `web/pages/hello-extension/index.tsx` with:
+
+```tsx title="web/pages/hello-extension/index.tsx"
+import { ONES } from '@ones-open/web-sdk'
+import { useEffect, useState } from 'react'
+import ReactDOM from 'react-dom'
+
+const App = () => {
+  useEffect(() => {
+    const loading = document.querySelector('.ones-app-loading')
+    loading?.remove()
+  }, [])
+
+  const [locale, setLocale] = useState('en')
+  const [teamInfo, setTeamInfo] = useState<Partial<ONES.TeamInfo>>({})
+  const [userInfo, setUserInfo] = useState<Partial<ONES.UserInfo>>({})
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const [nextLocale, nextTeam, nextUser] = await Promise.all([
+          ONES.getLocale(),
+          ONES.getTeamInfo(),
+          ONES.getUserInfo(),
+        ])
+        setLocale(nextLocale)
+        setTeamInfo(nextTeam)
+        setUserInfo(nextUser)
+      } catch (error) {
+        await ONES.UI.toast({
+          type: 'error',
+          title: 'Failed to load page context',
+          description: error instanceof Error ? error.message : String(error),
+        })
+      }
+    })()
+  }, [])
+
+  const handleOpenAPIClick = async () => {
+    if (!teamInfo.teamUUID) {
+      await ONES.UI.toast({
+        type: 'warning',
+        title: 'Team context not ready',
+        description: 'Please wait one moment and try again.',
+      })
+      return
+    }
+
+    try {
+      const res = await ONES.fetchOpenAPI(
+        `/v2/project/projects?teamID=${encodeURIComponent(teamInfo.teamUUID)}`,
+        { method: 'GET' },
+      )
+      if (!res.ok) {
+        throw new Error(`OpenAPI request failed with HTTP ${res.status}`)
+      }
+      const data = (await res.json()) as { data?: { list?: unknown[] } }
+      const projectCount = data.data?.list?.length ?? 0
+      await ONES.UI.toast({
+        type: 'success',
+        title: `Hello ${userInfo.name ?? 'there'}!`,
+        description: `OpenAPI success. Projects in first page: ${projectCount}.`,
+      })
+    } catch (error) {
+      await ONES.UI.toast({
+        type: 'error',
+        title: 'OpenAPI request failed',
+        description: error instanceof Error ? error.message : String(error),
+      })
+    }
+  }
+
+  const handleAppAPIClick = async () => {
+    try {
+      const res = await ONES.fetchApp('/health_check')
+      if (!res.ok) {
+        throw new Error(`App API request failed with HTTP ${res.status}`)
+      }
+      const data = (await res.json()) as { ok?: boolean }
+      await ONES.UI.toast({
+        type: data.ok ? 'success' : 'warning',
+        title: 'App API result',
+        description: `GET /health_check returned ok=${String(data.ok)}`,
+      })
+    } catch (error) {
+      await ONES.UI.toast({
+        type: 'error',
+        title: 'App API request failed',
+        description: error instanceof Error ? error.message : String(error),
+      })
+    }
+  }
+
+  return (
+    <div style={{ padding: 16, fontFamily: 'sans-serif' }}>
+      <h2>Hello Extension</h2>
+      <p>Locale: {locale}</p>
+      <p>Team: {teamInfo.teamUUID ?? '(unknown)'}</p>
+      <p>User: {userInfo.uuid ?? '(unknown)'}</p>
+      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+        <button onClick={() => void handleOpenAPIClick()}>Call OpenAPI</button>
+        <button onClick={() => void handleAppAPIClick()}>Call App API</button>
+      </div>
+    </div>
+  )
+}
+
+ReactDOM.render(<App />, document.getElementById('root'))
+```
+
+This demo uses:
+
+- `ONES.getTeamInfo()` and `ONES.getUserInfo()` to load context
+- `ONES.fetchOpenAPI()` to call `/v2/project/projects`
+- `ONES.fetchApp()` to call `/health_check` in your backend
+- `ONES.UI.toast()` to show success/error feedback
+
+You can use `type: 'info' | 'success' | 'warning' | 'error'`, with `title` and `description` in toast params. See [ONES.UI.toast](/docs/abilities/web-sdk/ui-toast) for full options.
+
+## Build and Verify
+
+1. Run `ones build`
+2. Update(upload) the latest `.opkx` package in ONES App Center
+3. Check your app backend logs in app's runtime info.
+4. Click **Call OpenAPI** and **Call App API**
+
+You should see success toasts for both actions.
+
+## Troubleshooting
+
+- **Tab not shown**: Check `app.extensions.appSettingPages` and that the new entry is returned from `customEntries`. Re-upload the new package.
+- **Team context not ready**: Wait until the page finishes loading context (`teamUUID`) before clicking **Call OpenAPI**.
+- **OpenAPI 403**: Ensure `read:project:project` is in `app.oauth.scope`, then rebuild and reinstall the app.
+- **App API 404/5xx**: Confirm `/health_check` exists in `backend/app.controller.ts`, then rebuild and re-upload.
+
+## Next Steps
+
+- Learn more in [Web SDK](../../abilities/web-sdk/)
+- Learn more about [App Lifecycle](../advanced/app-lifecycle)
+- Learn more about [ONES Hosted App](../advanced/ones-hosted-app/)

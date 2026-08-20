@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Update Project Event Schema",
+  "description": "Update project event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:project:project:updated"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["projectID", "updateField"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "projectID": {
+          "type": "string",
+          "description": "Event-associated project ID."
+        },
+        "updateField": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/UpdateField"
+          },
+          "description": "List of changed project properties."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "UpdateField": {
+      "type": "object",
+      "required": ["fileID", "fieldType", "from", "to"],
+      "properties": {
+        "fileID": {
+          "type": "string",
+          "description": "ID of the field changed."
+        },
+        "fieldType": {
+          "type": "string",
+          "enum": [
+            "float",
+            "integer",
+            "time",
+            "date",
+            "user_list",
+            "user",
+            "multi_option",
+            "multi_line_text",
+            "text",
+            "option",
+            "status"
+          ],
+          "description": "Type of the project field changed."
+        },
+        "from": {
+          "description": "Previous value of the field."
+        },
+        "to": {
+          "description": "New value of the field."
+        }
+      }
+    }
+  }
+}

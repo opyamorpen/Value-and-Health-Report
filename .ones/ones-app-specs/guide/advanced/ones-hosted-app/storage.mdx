@@ -1,0 +1,309 @@
+---
+id: storage
+sidebar_position: 3
+---
+
+# Hosted App Storage
+
+## Overview
+
+Hosted App Storage provides unified persistence capabilities for hosted apps, including:
+
+- Entity Storage: read/write/query for structured business data.
+- Object Storage: upload/download for files and attachments.
+
+## Quick Start
+
+### 1. Configure storage declarations in manifest
+
+Add `ones.storage` to your hosted app `opkx.json`:
+
+```json title="opkx.json" {4-36}
+{
+  "app": { ... },
+  "runtime": { ... },
+  "ones": {
+    "storage": {
+      "object": true,
+      "entities": [
+        {
+          "name": "employee",
+          "attributes": {
+            "name": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "age": {
+              "type": "integer",
+              "required": true
+            },
+            "department": {
+              "type": "string",
+              "length": 64,
+              "default": ""
+            }
+          },
+          "indexes": [
+            {
+              "name": "idx_name",
+              "range_attribute": "name"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
+```
+
+:::warning Note
+
+- Put declarations under `ones.storage`.
+- To enable Object Storage, you must explicitly set `ones.storage.object: true`.
+  :::
+
+### 2. Import `@ones-open/node-sdk` in backend and use `storage`
+
+```typescript title="backend/storage/index.ts"
+import { storage } from '@ones-open/node-sdk'
+
+const entity = storage.entity
+const object = storage.object
+```
+
+### 3. Use Entity Storage
+
+#### 1) Write data
+
+```typescript title="backend/storage/index.ts"
+import { storage } from '@ones-open/node-sdk'
+
+const entity = storage.entity
+
+await entity('employee').set('employee_001', {
+  name: 'Alice',
+  age: 30,
+  department: 'Engineering',
+})
+```
+
+#### 2) Read data
+
+```typescript title="backend/storage/index.ts"
+import { storage } from '@ones-open/node-sdk'
+
+const entity = storage.entity
+
+const employee = await entity('employee').get('employee_001')
+console.log(employee?.name, employee?.department)
+```
+
+#### 3) Query by index
+
+```typescript title="backend/storage/index.ts"
+import { storage } from '@ones-open/node-sdk'
+
+const entity = storage.entity
+
+const list = await entity('employee').query().index('idx_name').getMany()
+
+console.log(list.data.length)
+```
+
+### 4. Use Object Storage
+
+#### 1) Get upload pre-sign parameters
+
+```typescript title="backend/storage/index.ts"
+import { storage } from '@ones-open/node-sdk'
+import type { ObjectStoreUploadResult } from '@ones-open/node-sdk'
+
+const object = storage.object
+
+const upload = (await object.upload('task-attachment')) as ObjectStoreUploadResult
+const url = upload.getWebUrl()
+const fields = upload.getFields()
+```
+
+#### 2) Get download URL
+
+```typescript title="backend/storage/index.ts"
+import { storage } from '@ones-open/node-sdk'
+import type { ObjectStoreDownloadResult } from '@ones-open/node-sdk'
+
+const object = storage.object
+
+const download = (await object.download('task-attachment')) as ObjectStoreDownloadResult
+const url = download.getWebUrl()
+console.log(url)
+```
+
+## Manifest Declarations
+
+<a id="entity-data-specification"></a>
+
+### Entity Storage {#entity-storage}
+
+#### Declaration format
+
+```json title="opkx.json"
+{
+  "ones": {
+    "storage": {
+      "entities": [
+        {
+          "name": "<entity1>",
+          "attributes": {
+            "<attribute1>": {
+              "type": "<type>",
+              "required": true
+            },
+            "<attribute2>": {
+              "type": "<type>",
+              "default": "<value>"
+            },
+            "<attributeN>": {
+              "type": "<type>",
+              "default": "<value>"
+            }
+          },
+          "indexes": [
+            {
+              "name": "<index1>",
+              "range_attribute": "<attribute_name>"
+            },
+            {
+              "name": "<indexN>",
+              "range_attribute": "<attribute_name>",
+              "partition": ["<attribute_name>"]
+            }
+          ]
+        },
+        {
+          "name": "<entity2>"
+        },
+        {
+          "name": "<entityN>"
+        }
+      ]
+    }
+  }
+}
+```
+
+#### Field definitions
+
+| Field                   | Type       | Required | Description                                        |
+| ----------------------- | ---------- | -------- | -------------------------------------------------- |
+| `ones.storage.entities` | `[]entity` | Yes      | Entity configuration array. See [entity](#entity). |
+
+##### entity
+
+| Field        | Type                   | Required | Description                                                                |
+| ------------ | ---------------------- | -------- | -------------------------------------------------------------------------- |
+| `name`       | `string`               | Yes      | Entity name.                                                               |
+| `attributes` | `map[string]attribute` | Yes      | Attribute definitions. Key is attribute name. See [attribute](#attribute). |
+| `indexes`    | `[]index`              | No       | Index definitions. See [indexes](#indexes).                                |
+
+##### attribute
+
+| Field      | Type      | Required               | Description                                                   |
+| ---------- | --------- | ---------------------- | ------------------------------------------------------------- |
+| `type`     | `string`  | Yes                    | Supports `boolean` / `integer` / `float` / `string` / `text`. |
+| `required` | `boolean` | No                     | Whether required.                                             |
+| `default`  | `any`     | No                     | Default value; cannot be used together with `required: true`. |
+| `length`   | `integer` | Conditionally required | Required when `type=string`; range `[1, 2048]`.               |
+
+###### attribute.type
+
+| Value     | Indexable | Needs `length`    | Notes                                         |
+| --------- | --------- | ----------------- | --------------------------------------------- |
+| `boolean` | Yes       | No                | `true` / `false`                              |
+| `integer` | Yes       | No                | `(-9223372036854775808, 9223372036854775807]` |
+| `float`   | Yes       | No                | Up to 15 significant digits                   |
+| `string`  | Yes       | Yes (`[1, 2048]`) | Suitable for queryable fields                 |
+| `text`    | No        | No                | Long text (max 32768 bytes per attribute)     |
+
+<a id="custom-index-definition"></a>
+
+##### indexes {#indexes}
+
+| Field             | Type       | Required | Description                           |
+| ----------------- | ---------- | -------- | ------------------------------------- |
+| `name`            | `string`   | Yes      | Index name.                           |
+| `range_attribute` | `string`   | Yes      | Must reference an existing attribute. |
+| `partition`       | `string[]` | No       | Partition attribute array.            |
+| `unique`          | `boolean`  | No       | Unique constraint flag.               |
+
+:::warning Note
+`range_attribute` and `partition` can only reference indexable attribute types (`boolean` / `integer` / `float` / `string`).
+:::
+
+#### Constraints
+
+##### Entity Key
+
+| Type       | Constraint                                     |
+| ---------- | ---------------------------------------------- |
+| Entity Key | Max 64 bytes and matches `/^[_a-z0-9]{1,64}$/` |
+
+##### Attributes and indexes
+
+- `string` requires `length`; `text` is not indexable.
+- Required attributes: `required: true`; value must be provided on write.
+- Default value attributes: use `default`; cannot be combined with `required: true`.
+- Default value length for `string`/`text` must be ≤ 64 bytes.
+- Index rules:
+  - `range_attribute` must reference an existing attribute in `attributes`.
+  - `range_attribute` type must be one of `boolean` / `integer` / `float` / `string`.
+  - `partition` and `unique` are optional; `unique` enforces uniqueness on `range_attribute + partition`.
+
+##### Quantity and naming limits
+
+| Item                  | Limit                                     |
+| --------------------- | ----------------------------------------- |
+| Number of entities    | Max 64                                    |
+| Entity name           | Max 32 bytes, regex `/^[_a-z0-9]{1,32}$/` |
+| Attributes per entity | Max 32                                    |
+| Attribute name        | Max 64 bytes, regex `/^[_a-z0-9]{1,64}$/` |
+| Number of indexes     | Max 64                                    |
+| Index name            | Max 64 bytes, regex `/^[_a-z0-9]{1,64}$/` |
+
+### Object Storage
+
+#### Declaration format
+
+```json title="opkx.json"
+{
+  "ones": {
+    "storage": {
+      "object": true
+    }
+  }
+}
+```
+
+#### Constraints
+
+<a id="object-key-specification"></a>
+
+##### Object Key {#object-key}
+
+Max 128 bytes and matches `/^[0-9a-zA-Z!_.*'()-]{1,128}$/`.
+Recommended to follow the [S3 object key specification](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html).
+
+##### File size
+
+Recommended file size: up to `1 GB`.
+
+##### Signature validity
+
+Pre-signed URL is valid for `1 hour`; request a new one after expiry.
+
+## Next Steps
+
+- Learn about the [Node SDK - Entity Storage](../../../abilities/node-sdk/storage/entity/entity.mdx)
+- Learn about the [Node SDK - Object Storage](../../../abilities/node-sdk/storage/object/object.mdx)
+- Review the [Getting Started guide](../../getting-started/getting-started.mdx) for creating your first app
+- Explore [ONES CLI](../../../abilities/ones-cli/ones-cli.mdx) for building and deploying Hosted Apps

@@ -1,0 +1,93 @@
+---
+id: ones-hosted-app
+sidebar_position: 1
+---
+
+# ONES Hosted App
+
+## Overview
+
+A **Hosted App** is a type of ONES application that is hosted and managed by the ONES platform. Unlike traditional ONES Apps that require you to deploy and maintain your own infrastructure, Hosted Apps are deployed directly to ONES's infrastructure, allowing you to focus on building your application logic without worrying about server management, scaling, or infrastructure maintenance.
+
+## What is a Hosted App?
+
+A Hosted App is essentially a containerized application that runs on ONES's platform infrastructure. The application code, along with its dependencies and configuration, is packaged into a `.opkx` file (ONES Platform Package) that can be uploaded and deployed directly to ONES.
+
+## Key Features
+
+- **Managed Infrastructure**: ONES handles all infrastructure concerns including servers, networking, and scaling
+- **Easy Deployment**: Simply package your app into a `.opkx` file and upload it
+- **Automatic Scaling**: The platform automatically handles scaling based on demand
+- **Built-in Runtime Support**: Support for Node.js 22 runtime or custom container images
+- **Health Monitoring**: Built-in health check support for application monitoring
+- **Resource Management**: Configure CPU and memory resources for your application
+
+## Hosted App Package Format
+
+A Hosted App is distributed as a `.opkx` file, which is a compressed archive containing:
+
+1. **Application Code**: Your application source code and files
+2. **Manifest File**: An `opkx.json` file that describes the application configuration
+
+The `.opkx` file format is similar to a ZIP archive and contains all necessary files for the application to run.
+
+## Runtime Types
+
+Hosted Apps support two runtime types:
+
+### 1. ONES Node.js 22 Runtime
+
+A pre-configured Node.js 22 runtime environment provided by ONES. This is the simplest option for Node.js applications.
+
+**Benefits:**
+
+- No need to build custom container images
+- Automatic Node.js 22 environment setup
+- Optimized for ONES platform
+
+### 2. Custom Container
+
+Use your own container image for maximum flexibility. The image must follow ONES platform requirements.
+
+**Benefits:**
+
+- Full control over runtime environment
+- Support for any language or framework
+- Custom dependencies and configurations
+
+## Application Structure
+
+A typical Hosted App structure looks like this:
+
+```
+my-hosted-app/
+├── dist/            # Application build output
+├── src/             # Application source code
+├── package.json     # Node.js dependencies (if applicable)
+├── opkx.json        # Application manifest (required)
+└── ...              # Other application files
+```
+
+## Benefits of Hosted Apps
+
+- **Reduced Operational Overhead**: No need to manage servers, load balancers, or infrastructure
+- **Faster Deployment**: Deploy applications with a single file upload
+- **Automatic Updates**: Platform handles runtime updates and security patches
+- **Cost Efficiency**: Pay only for the resources your app uses
+- **High Availability**: Built-in redundancy and failover capabilities
+
+## When to Use Hosted Apps
+
+Hosted Apps are ideal when:
+
+- You want to focus on application logic rather than infrastructure
+- You need automatic scaling and high availability
+- You prefer managed services over self-hosting
+- You want faster deployment cycles
+- Your application fits within the supported runtime types
+
+## Next Steps
+
+- Learn about the [Hosted App Manifest](./manifest.mdx) format
+- Review the [Getting Started guide](../../getting-started/getting-started.mdx) for creating your first app
+- Explore [ONES CLI](../../../abilities/ones-cli//ones-cli.mdx) for building and deploying Hosted Apps

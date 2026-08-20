@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Wiki Page Event Schema",
+  "description": "Wiki page event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:wiki:page:changed"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": [
+        "organizationID",
+        "teamID",
+        "triggerUserID",
+        "pageID",
+        "action",
+        "referenceType"
+      ],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event."
+        },
+        "pageID": {
+          "type": "string",
+          "description": "ID of the wiki page."
+        },
+        "action": {
+          "type": "string",
+          "description": "Action of the wiki page.",
+          "enum": [
+            "create",
+            "update",
+            "delete",
+            "purge",
+            "restore",
+            "revert",
+            "move",
+            "archive",
+            "unarchive"
+          ]
+        },
+        "referenceType": {
+          "type": "string",
+          "description": "Reference type of the wiki page.",
+          "enum": ["default", "word", "excel", "ppt", "collaboration", "collaborationPlugin"]
+        },
+        "subReferenceType": {
+          "type": "string",
+          "description": "Sub-reference type of the wiki page. May be empty."
+        }
+      }
+    }
+  }
+}

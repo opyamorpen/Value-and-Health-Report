@@ -1,0 +1,507 @@
+openapi: 3.0.1
+info:
+  title: Storage API List
+  version: '1.0.0'
+  description: |
+    Definition for hosted storage APIs under:
+    - /hosted_token/introspect
+    - /hosted_ability/storage/{appID}/entity_data
+    - /hosted_ability/storage/{appID}/object
+servers:
+  - url: /platform/runtime_manager
+tags:
+  - name: HostedToken
+    description: Hosted token introspection endpoint
+  - name: HostedStorageEntity
+    description: Hosted entity storage operations
+  - name: HostedStorageObject
+    description: Hosted object storage operations
+paths:
+  /hosted_token/introspect:
+    post:
+      tags:
+        - HostedToken
+      summary: Introspect hosted access token
+      description: |
+        Returns token activity status and bound app/scopes from Authorization header.
+      operationId: IntrospectHostedToken
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/HostedAuthorizationHeader'
+      responses:
+        '200':
+          description: Introspection result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntrospectHostedTokenResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /hosted_ability/storage/{appID}/entity_data:
+    post:
+      tags:
+        - HostedStorageEntity
+      summary: Batch add or update entity data
+      operationId: BatchAddOrUpdateEntityData
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AppIDPath'
+      requestBody:
+        $ref: '#/components/requestBodies/EntityDataWriteRequestBody'
+      responses:
+        '200':
+          description: Write succeeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationOKResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+    delete:
+      tags:
+        - HostedStorageEntity
+      summary: Batch delete entity data by keys
+      operationId: BatchDeleteEntityData
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AppIDPath'
+      requestBody:
+        $ref: '#/components/requestBodies/EntityDataDeleteRequestBody'
+      responses:
+        '200':
+          description: Delete succeeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationOKResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /hosted_ability/storage/{appID}/entity_data/get_many:
+    post:
+      tags:
+        - HostedStorageEntity
+      summary: Query entity data
+      operationId: GetManyEntityData
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AppIDPath'
+      requestBody:
+        $ref: '#/components/requestBodies/EntityDataQueryRequestBody'
+      responses:
+        '200':
+          description: Query succeeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetManyEntityDataResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /hosted_ability/storage/{appID}/entity_data/count:
+    post:
+      tags:
+        - HostedStorageEntity
+      summary: Count entity data
+      operationId: CountEntityData
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AppIDPath'
+      requestBody:
+        $ref: '#/components/requestBodies/EntityDataQueryRequestBody'
+      responses:
+        '200':
+          description: Count succeeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CountEntityDataResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /hosted_ability/storage/{appID}/object/get_upload_policy_info:
+    post:
+      tags:
+        - HostedStorageObject
+      summary: Get upload policy information for object storage
+      operationId: GetUploadPolicyInfo
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AppIDPath'
+      requestBody:
+        $ref: '#/components/requestBodies/ObjectRequestBody'
+      responses:
+        '200':
+          description: Upload policy returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUploadPolicyInfoResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /hosted_ability/storage/{appID}/object/get_download_pre_signed_url:
+    post:
+      tags:
+        - HostedStorageObject
+      summary: Get pre-signed download URL for object
+      operationId: GetPreSignDownloadURL
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AppIDPath'
+      requestBody:
+        $ref: '#/components/requestBodies/GetPreSignDownloadURLRequestBody'
+      responses:
+        '200':
+          description: Download URL returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetPreSignDownloadURLResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /hosted_ability/storage/{appID}/object/get_metadata:
+    post:
+      tags:
+        - HostedStorageObject
+      summary: Get object metadata
+      operationId: GetObjectMetadata
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AppIDPath'
+      requestBody:
+        $ref: '#/components/requestBodies/ObjectRequestBody'
+      responses:
+        '200':
+          description: Metadata returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetObjectMetadataResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+  /hosted_ability/storage/{appID}/object/delete:
+    post:
+      tags:
+        - HostedStorageObject
+      summary: Delete object
+      operationId: DeleteObject
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AppIDPath'
+      requestBody:
+        $ref: '#/components/requestBodies/ObjectRequestBody'
+      responses:
+        '200':
+          description: Delete succeeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationOKResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ErrorResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: HostedToken
+      description: |
+        Pass hosted token in Authorization header:
+        `Authorization: Bearer <hosted_token>`.
+  parameters:
+    AppIDPath:
+      name: appID
+      in: path
+      required: true
+      description: Application ID
+      schema:
+        type: string
+    HostedAuthorizationHeader:
+      name: Authorization
+      in: header
+      required: false
+      description: 'Hosted bearer token. Example: Bearer <hosted_token>'
+      schema:
+        type: string
+  requestBodies:
+    ObjectRequestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ObjectRequest'
+    GetPreSignDownloadURLRequestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GetPreSignDownloadURLRequest'
+    EntityDataWriteRequestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EntityDataWriteRequest'
+    EntityDataDeleteRequestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EntityDataDeleteRequest'
+    EntityDataQueryRequestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EntityDataQueryRequest'
+  responses:
+    ErrorResponse:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    RenderPayloadBase:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Business error code
+        message:
+          type: string
+          description: Human-readable message
+        details:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/RawJSON'
+          description: Extra error details
+    ErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/RenderPayloadBase'
+        - type: object
+          required:
+            - code
+            - message
+    IntrospectHostedTokenResponse:
+      allOf:
+        - $ref: '#/components/schemas/RenderPayloadBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/IntrospectHostedTokenData'
+    OperationOKResponse:
+      allOf:
+        - $ref: '#/components/schemas/RenderPayloadBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/OperationOKData'
+    CountEntityDataResponse:
+      allOf:
+        - $ref: '#/components/schemas/RenderPayloadBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CountData'
+    GetManyEntityDataResponse:
+      allOf:
+        - $ref: '#/components/schemas/RenderPayloadBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/RawJSON'
+          description: Raw JSON data
+    GetUploadPolicyInfoResponse:
+      allOf:
+        - $ref: '#/components/schemas/RenderPayloadBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/UploadPolicyInfoData'
+    GetPreSignDownloadURLResponse:
+      allOf:
+        - $ref: '#/components/schemas/RenderPayloadBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PreSignDownloadURLData'
+    GetObjectMetadataResponse:
+      allOf:
+        - $ref: '#/components/schemas/RenderPayloadBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ObjectMetadataData'
+    OperationOKData:
+      type: object
+      properties:
+        ok:
+          type: boolean
+      required:
+        - ok
+    IntrospectHostedTokenData:
+      type: object
+      properties:
+        active:
+          type: boolean
+        app_id:
+          type: string
+        scopes:
+          type: array
+          items:
+            type: string
+        token_type:
+          type: string
+        exp:
+          type: integer
+          format: int64
+          description: Expire time as unix timestamp. 0 means non-expiring.
+      required:
+        - active
+    CountData:
+      type: object
+      properties:
+        count:
+          type: integer
+          format: int64
+      required:
+        - count
+    UploadPolicyInfoData:
+      type: object
+      properties:
+        fields:
+          type: object
+          additionalProperties:
+            type: string
+        upload_url_internal:
+          type: string
+        upload_url_outbound:
+          type: string
+    PreSignDownloadURLData:
+      type: object
+      properties:
+        download_url_internal:
+          type: string
+        download_url_outbound:
+          type: string
+    ObjectMetadataData:
+      type: object
+      properties:
+        object_key:
+          type: string
+        size:
+          type: integer
+          format: int64
+      required:
+        - object_key
+        - size
+    ObjectRequest:
+      type: object
+      properties:
+        object_key:
+          type: string
+      required:
+        - object_key
+    GetPreSignDownloadURLRequest:
+      type: object
+      properties:
+        object_key:
+          type: string
+        response_content_disposition:
+          type: string
+          description: Mapped to response-content-disposition for signed URL
+        response_content_type:
+          type: string
+          description: Mapped to response-content-type for signed URL
+      required:
+        - object_key
+    EntityDataWriteRequest:
+      type: object
+      properties:
+        entity_name:
+          type: string
+        data:
+          $ref: '#/components/schemas/RawJSON'
+          description: Raw JSON payload passed through to entity storage service.
+      required:
+        - entity_name
+        - data
+    EntityDataDeleteRequest:
+      type: object
+      properties:
+        entity_name:
+          type: string
+        data:
+          $ref: '#/components/schemas/RawJSON'
+          description: Raw JSON payload passed through to entity storage service.
+      required:
+        - entity_name
+        - data
+    EntityDataQueryRequest:
+      type: object
+      properties:
+        entity_name:
+          type: string
+        data:
+          $ref: '#/components/schemas/RawJSON'
+          description: Raw JSON payload passed through to entity storage service.
+      required:
+        - entity_name
+        - data
+    RawJSON:
+      nullable: true
+      description: Arbitrary JSON value

@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Create or Update Department Event Schema",
+  "description": "Create or update department event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:department:created_or_updated"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["departmentID", "fields"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "departmentID": {
+          "type": "string",
+          "description": "ID of the department associated with the event."
+        },
+        "fields": {
+          "$ref": "#/definitions/DepartmentFields",
+          "description": "Updated fields of the department."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "DepartmentFields": {
+      "type": "object",
+      "properties": {
+        "teamID": {
+          "type": "string",
+          "description": "ID of the team."
+        },
+        "parentID": {
+          "type": "string",
+          "description": "ID of the parent department."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the department."
+        },
+        "namePinyin": {
+          "type": "string",
+          "description": "Pinyin of the department name."
+        },
+        "nextID": {
+          "type": "string",
+          "description": "ID of the next department."
+        }
+      }
+    }
+  }
+}

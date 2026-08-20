@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ones.com/schemas/extensions/app-setting-pages-response.json",
+  "title": "App Setting Pages Custom Entries Response",
+  "description": "Response schema for app setting pages custom entries endpoint",
+  "type": "object",
+  "properties": {
+    "entries": {
+      "type": "array",
+      "description": "Array of custom tab entries",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Tab title displayed in UI",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "page_url": {
+            "type": "string",
+            "description": "Tab content page URL (relative path)",
+            "minLength": 1,
+            "maxLength": 512,
+            "pattern": "^/.*"
+          }
+        },
+        "required": ["title", "page_url"],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 10
+    }
+  },
+  "required": ["entries"],
+  "additionalProperties": false
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Custom Login URL Response",
+  "type": "object",
+  "properties": {
+    "login_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Which url that you implemented to complete your auth"
+    }
+  },
+  "required": ["login_url"],
+  "additionalProperties": false
+}

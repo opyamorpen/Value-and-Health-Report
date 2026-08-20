@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Directory Sync Request",
+  "type": "object",
+  "properties": {
+    "org_uuid": {
+      "type": "string",
+      "description": "ONES organization UUID"
+    }
+  },
+  "required": ["org_uuid"],
+  "additionalProperties": false
+}

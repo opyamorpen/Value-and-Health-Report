@@ -1,0 +1,121 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Change Approval Status Event Schema",
+  "description": "Approval status changed event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:approval:status:changed"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": [
+        "organizationID",
+        "teamID",
+        "approvalID",
+        "approvalType",
+        "ruleID",
+        "spaceType",
+        "spaceID",
+        "issuerID",
+        "contents",
+        "fromStatus",
+        "toStatus"
+      ],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the transition. May be omitted for a system transition."
+        },
+        "approvalID": {
+          "type": "string",
+          "description": "ID of the approval."
+        },
+        "parentApprovalID": {
+          "type": "string",
+          "description": "ID of the parent approval for a child approval."
+        },
+        "approvalType": {
+          "type": "string",
+          "enum": ["issue", "wiki_page", "gantt"],
+          "description": "Type of the approval."
+        },
+        "ruleID": {
+          "type": "string",
+          "description": "ID of the approval rule."
+        },
+        "spaceType": {
+          "type": "string",
+          "enum": ["project", "wiki_space"],
+          "description": "Type of the space containing the approval."
+        },
+        "spaceID": {
+          "type": "string",
+          "description": "ID of the space containing the approval."
+        },
+        "issuerID": {
+          "type": "string",
+          "description": "ID of the user who initiated the approval."
+        },
+        "contents": {
+          "type": "array",
+          "description": "Objects associated with the approval.",
+          "items": {
+            "$ref": "#/definitions/Content"
+          }
+        },
+        "fromStatus": {
+          "$ref": "#/definitions/ApprovalStatus",
+          "description": "Status before the transition."
+        },
+        "toStatus": {
+          "$ref": "#/definitions/ApprovalStatus",
+          "description": "Status after the transition."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Content": {
+      "type": "object",
+      "required": ["subjectType", "subjectID"],
+      "properties": {
+        "subjectType": {
+          "type": "string",
+          "description": "Type of the object associated with approval."
+        },
+        "subjectID": {
+          "type": "string",
+          "description": "ID of the object associated with approval."
+        }
+      }
+    },
+    "ApprovalStatus": {
+      "type": "string",
+      "enum": ["processing", "approved", "rejected", "revoked", "completed"]
+    }
+  }
+}

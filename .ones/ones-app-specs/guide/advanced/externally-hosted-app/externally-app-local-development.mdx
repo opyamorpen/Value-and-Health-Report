@@ -1,0 +1,271 @@
+---
+id: externally-hosted-app-local-development
+sidebar_position: 1
+---
+
+import { AppIdGenerator, JsonSchemaViewer } from '@site/src/components'
+
+# Externally Hosted App: Local Development
+
+## Overview
+
+:::info
+
+Use this guide to build and validate an externally hosted app on your local machine.
+
+Most developers should build apps as **ONES-Hosted Apps**. See **[Getting Started](../../getting-started/getting-started.mdx)** for a simpler way to build apps.
+
+:::
+In this guide, you will create a simple ONES app (a web application that integrates with ONES) and connect it to ONES from your local environment.
+
+> If you already have a web service, you can skip [**Create an App Project**](#create-an-app-project) and integrate your existing application.
+
+## Prerequisites
+
+- Your preferred IDE or text editor, such as [VS Code](https://code.visualstudio.com/).
+- A basic understanding of [HTML, CSS, and JavaScript](https://developer.mozilla.org/en-US/docs/Web).
+- A basic understanding of [ONES](https://ones.com).
+- Access to a self-hosted ONES instance or a ONES Cloud account.
+- [Node.js](https://nodejs.org/) (version 20 or later).
+- Optional: A tunnel tool such as [ngrok](https://ngrok.com/) or [LocalTunnel](https://github.com/localtunnel/localtunnel), which lets ONES access your local server.
+
+## Set Up Your Development Environment
+
+1. Prepare your local environment for building an app for ONES.
+2. Prepare your ONES environment for testing and validating app installation.
+
+:::info
+
+You can install your ONES instance by following the [ONES Installation Guide](https://opsdoc.ones.cn/docs/install-upgrade/K3S/install).
+
+Or sign up for a ONES Cloud account at [ones.com](https://ones.com).
+
+:::
+
+## Create an App Project
+
+We use [NestJS](https://docs.nestjs.com/) to create a sample ONES app.
+
+1. Create a new project.
+
+```bash
+$ npm i -g @nestjs/cli
+$ nest new ones-example-app
+$ cd ones-example-app
+```
+
+```bash title="Example/init new nestjs project"
+❯ nest new ones-example-app
+✨  We will scaffold your app in a few seconds..
+
+✔ Which package manager would you ❤️  to use? npm
+CREATE ones-example-app/.prettierrc (51 bytes)
+CREATE ones-example-app/README.md (5028 bytes)
+CREATE ones-example-app/eslint.config.mjs (836 bytes)
+CREATE ones-example-app/nest-cli.json (171 bytes)
+CREATE ones-example-app/package.json (2042 bytes)
+CREATE ones-example-app/tsconfig.build.json (97 bytes)
+CREATE ones-example-app/tsconfig.json (544 bytes)
+CREATE ones-example-app/src/app.controller.ts (274 bytes)
+CREATE ones-example-app/src/app.module.ts (249 bytes)
+CREATE ones-example-app/src/app.service.ts (142 bytes)
+CREATE ones-example-app/src/main.ts (228 bytes)
+CREATE ones-example-app/src/app.controller.spec.ts (617 bytes)
+CREATE ones-example-app/test/jest-e2e.json (183 bytes)
+CREATE ones-example-app/test/app.e2e-spec.ts (674 bytes)
+
+✔ Installation in progress... ☕
+
+🚀  Successfully created project ones-example-app
+
+cd ones-example-app
+```
+
+## Build your app manifest
+
+1. Create a new file called `manifest.json` in the root directory of your project.
+2. Generate a random App ID. (You can also define one manually. It must start with `app_` and be 20 characters long.)
+
+<AppIdGenerator />
+
+3. Add the following content to the `manifest.json` file. (Replace the `id` with the App ID you generated.)
+
+```json title="Example/manifest.json"
+{
+  "id": "app_<your-app-id>",
+  "name": "Test ONES App",
+  "desc": "This is a test app",
+  "version": "v0.0.1",
+  "base_url": "",
+  "auth": {
+    "type": "jwt"
+  },
+  "lifecycle_callback": {
+    "install": "/install_cb"
+  }
+}
+```
+
+:::info
+
+Refer to the App manifest schema for field-level details.
+
+<JsonSchemaViewer
+  schemaPath="json-schemas/app_schema.json"
+  title="App manifest schema"
+  collapsible={true}
+/>
+
+Or use our [App Manifest Builder](../../../app_schema_validator/) to build the App manifest content.
+
+:::
+
+## Add sample code and test the project
+
+1. Add the following to `src/app.controller.ts` (specifically `@Get('/manifest')` and `@Post('/install_cb')`).
+
+The full file should look like this:
+
+```typescript title="src/app.controller.ts"
+import {
+  Controller,
+  Get,
+  HttpException,
+  HttpStatus,
+  Post,
+  Res,
+  Body,
+} from '@nestjs/common';
+import type { Response } from 'express';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+@Controller()
+export class AppController {
+  constructor() {}
+  @Get('')
+  getHello(@Res() res: Response) {
+    this.getManifest(res);
+  }
+
+  @Get('/manifest')
+  getManifest(@Res() res: Response) {
+    try {
+      const manifestPath = join(process.cwd(), 'manifest.json');
+      const manifestData = readFileSync(manifestPath, 'utf8');
+      res.send(manifestData);
+    } catch {
+      throw new HttpException(
+        'No manifest file',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('/install_cb')
+  handleInstallCB(@Body() requestBody: any, @Res() res: Response) {
+    res.status(HttpStatus.OK).send('success');
+  }
+}
+
+```
+
+2. Install dependencies and run the project by executing `npm install` and `npm start` in the project directory.
+
+```bash
+❯ npm install
+added 1 package, and audited 799 packages in 2s
+
+153 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+❯ npm start
+[Nest] *** LOG [NestFactory] Starting Nest application...
+[Nest] *** LOG [InstanceLoader] AppModule dependencies initialized +9ms
+[Nest] *** LOG [RoutesResolver] AppController {/}: +1ms
+[Nest] *** LOG [RouterExplorer] Mapped {/, GET} route +1ms
+[Nest] *** LOG [RouterExplorer] Mapped {/manifest, GET} route +0ms
+[Nest] *** LOG [RouterExplorer] Mapped {/install_cb, POST} route +1ms
+[Nest] *** LOG [NestApplication] Nest application successfully started +0ms
+```
+
+3. Test the project with `curl`.
+
+```bash title="Example/curl http://localhost:3000/manifest"
+❯ curl http://localhost:3000/manifest
+{
+    "id": "app_<your-app-id>",
+    "name": "Test ONES App",
+    "desc": "This is a test app",
+    "version": "v0.0.1",
+    "base_url": "",
+    "auth": {
+        "type": "jwt"
+    },
+    "lifecycle_callback": {
+        "install": "/install_cb"
+    }
+}%
+```
+
+## Expose the app
+
+1. Expose the app to the internet.
+
+If you use ngrok, run the following command. The app will then be accessible at `https://your-app.ngrok.io`.
+
+```bash title="Example/expose the app to the internet"
+❯ ngrok http http://localhost:3000
+
+Session Status                online
+Version                       3.0.0
+Region                        United States (us)
+Web Interface                 http://127.0.0.1:4040
+Forwarding                    https://your-app.ngrok.io -> http://localhost:3000
+Connections                   ttl     opn     rt1     rt5     p50     p90
+                              22      0       0.00    0.00    0.00    0.00
+```
+
+2. Update the `base_url` in the `manifest.json` file.
+
+```json title="Example/manifest.json"
+{
+  "id": "app_<your-app-id>",
+  "name": "Test ONES App",
+  "desc": "This is a test app",
+  "version": "v0.0.1",
+  "base_url": "https://your-app.ngrok.io",
+  "auth": {
+    "type": "jwt"
+  },
+  "lifecycle_callback": {
+    "install": "/install_cb"
+  }
+}
+```
+
+## Install and enable the app
+
+> Note: Check you have the permission to install apps in your ONES organization.
+
+1. Navigate to the ONES instance and find the **App Center** on the left sidebar.
+2. Click the **App Center** to go to the **Installed apps** page.
+3. Click the **Upload App** button and enter the URL of your `manifest` info(`https://your-app.ngrok.io/manifest`), and **Confirm**.
+
+![Upload App](/images/developer/getting-started-images/upload-app.png)
+
+4. Verify the app information, then click `Confirm` to install the app.
+   ![App Information](/images/developer/getting-started-images/upload-app-confirm.png)
+
+5. The app will be installed and you can see it in the **Installed apps** page.
+   After installation, the app appears in the list. Click it to view details.
+
+6. Click the `Enable` button to enable the app.
+   ![Enable App](/images/developer/getting-started-images/app_enabled.png)
+
+## Next steps
+
+Choose a deployment target, either your own server or a cloud provider.
+Deploy your app, get a stable public URL, and update the `base_url` in `manifest.json`.

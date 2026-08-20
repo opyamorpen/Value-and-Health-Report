@@ -1,0 +1,178 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Update Sprint Field Event Schema",
+  "description": "Update sprint field event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:project:sprint-field:updated"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["id", "projectID", "propertyTypeLabel"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "id": {
+          "type": "string",
+          "description": "ID of the sprint field with the event."
+        },
+        "projectID": {
+          "type": "string",
+          "description": "ID of the project associated with the event."
+        },
+        "propertyTypeLabel": {
+          "type": "string",
+          "enum": ["option", "text", "integer", "float", "date", "time", "user", "multiLineText"],
+          "description": "Type of a sprint field."
+        },
+        "basicInfoChanges": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/BasicInfoChanges"
+          },
+          "description": "Sprint basic information change content."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "BasicInfoChanges": {
+      "type": "object",
+      "properties": {
+        "required": {
+          "$ref": "#/definitions/Required"
+        },
+        "defaultValue": {
+          "$ref": "#/definitions/DefaultValue"
+        },
+        "options": {
+          "$ref": "#/definitions/Options"
+        },
+        "name": {
+          "$ref": "#/definitions/Name"
+        }
+      }
+    },
+    "Required": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "type": "boolean",
+          "description": "Original sprint field required."
+        },
+        "newValue": {
+          "type": "boolean",
+          "description": "New sprint field required."
+        }
+      }
+    },
+    "DefaultValue": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "$ref": "#/definitions/PropertyValue"
+        },
+        "newValue": {
+          "$ref": "#/definitions/PropertyValue"
+        }
+      }
+    },
+    "Options": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Option"
+          }
+        },
+        "newValue": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Option"
+          }
+        }
+      }
+    },
+    "Name": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "type": "string"
+        },
+        "newValue": {
+          "type": "string"
+        }
+      }
+    },
+    "PropertyValue": {
+      "type": "object",
+      "properties": {
+        "stringValue": {
+          "type": "string"
+        },
+        "numberValue": {
+          "type": "number"
+        },
+        "entityValue": {
+          "$ref": "#/definitions/EntityRef"
+        },
+        "entityArray": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EntityRef"
+          }
+        }
+      }
+    },
+    "EntityRef": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "Option": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "value": {
+          "description": "Value of the option"
+        }
+      }
+    }
+  }
+}

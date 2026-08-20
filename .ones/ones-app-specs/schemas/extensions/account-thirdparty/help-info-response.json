@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Help Info Response",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Display your extension name in ONES account thirdparty to users"
+    },
+    "desc": {
+      "type": "string",
+      "description": "Short description of your account thirdparty"
+    },
+    "config_tip": {
+      "type": "string",
+      "description": "Tips for configuring your account thirdparty"
+    },
+    "detail_tip": {
+      "type": "string",
+      "description": "Detailed guidance or help content for your account thirdparty"
+    }
+  },
+  "required": ["title", "desc"],
+  "additionalProperties": false
+}

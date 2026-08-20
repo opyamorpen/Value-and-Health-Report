@@ -1,0 +1,7 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Message Notify Response",
+  "type": "object",
+  "description": "Return 200 with an empty object on success. Include error details only when needed.",
+  "additionalProperties": true
+}

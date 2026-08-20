@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ones.com/schemas/extensions/manhour-validator-request.json",
+  "title": "Manhour Validator Request",
+  "description": "Request schema for manhour validator endpoint",
+  "type": "object",
+  "properties": {
+    "teamUUID": {
+      "type": "string",
+      "description": "Team identifier",
+      "minLength": 1
+    },
+    "userUUID": {
+      "type": "string",
+      "description": "User identifier who is performing the action",
+      "minLength": 1
+    },
+    "type": {
+      "type": "string",
+      "description": "Type of manhour operation",
+      "enum": ["recorded", "estimated", "remaining"]
+    },
+    "action": {
+      "type": "string",
+      "description": "Action to perform",
+      "enum": ["add", "update", "delete"]
+    },
+    "mode": {
+      "type": "string",
+      "description": "Mode of operation",
+      "enum": ["simple", "detailed"]
+    },
+    "options": {
+      "type": "object",
+      "description": "Additional options for the operation",
+      "properties": {
+        "scene": {
+          "type": "string",
+          "description": "Scene context for the operation",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "manhour_info": {
+      "type": "array",
+      "description": "Array of ManhourInfo objects containing the manhour data",
+      "items": {
+        "type": "object",
+        "properties": {
+          "task": {
+            "type": "object",
+            "description": "Task information",
+            "properties": {
+              "UUID": {
+                "type": "string",
+                "description": "Unique identifier of the task",
+                "minLength": 1
+              },
+              "TeamUUID": {
+                "type": "string",
+                "description": "Team identifier the task belongs to",
+                "minLength": 1
+              },
+              "Owner": {
+                "type": "string",
+                "description": "Task owner identifier",
+                "minLength": 1
+              },
+              "Assign": {
+                "type": "string",
+                "description": "Task assignee identifier",
+                "minLength": 1
+              },
+              "ProjectUUID": {
+                "type": "string",
+                "description": "Project identifier the task belongs to",
+                "minLength": 1
+              },
+              "IssueTypeUUID": {
+                "type": "string",
+                "description": "Issue type identifier",
+                "minLength": 1
+              },
+              "ParentUUID": {
+                "type": "string",
+                "description": "Parent task identifier (for subtasks)"
+              },
+              "SubIssueTypeUUID": {
+                "type": "string",
+                "description": "Sub-issue type identifier"
+              },
+              "IsCreateTask": {
+                "type": "boolean",
+                "description": "Whether this is creating a new task"
+              }
+            },
+            "required": [
+              "UUID",
+              "TeamUUID",
+              "Owner",
+              "Assign",
+              "ProjectUUID",
+              "IssueTypeUUID",
+              "IsCreateTask"
+            ],
+            "additionalProperties": false
+          },
+          "assess_manhour": {
+            "type": "object",
+            "description": "Estimated manhour information",
+            "properties": {
+              "UUID": {
+                "type": "string",
+                "description": "Unique identifier of the estimated manhour record"
+              },
+              "From": {
+                "type": "number",
+                "description": "Start timestamp (Unix timestamp)"
+              },
+              "To": {
+                "type": "number",
+                "description": "End timestamp (Unix timestamp)"
+              },
+              "HoursFormat": {
+                "type": "string",
+                "description": "Format of hours display"
+              },
+              "IncludeNonWorkingDay": {
+                "type": "number",
+                "description": "Whether to include non-working days (0 or 1)"
+              },
+              "Hours": {
+                "type": "number",
+                "description": "Estimated hours"
+              },
+              "Owner": {
+                "type": "string",
+                "description": "Owner of the estimated hours"
+              },
+              "StartTime": {
+                "type": "number",
+                "description": "Start time (Unix timestamp)"
+              }
+            },
+            "additionalProperties": false
+          },
+          "remaining_manhour": {
+            "type": "object",
+            "description": "Remaining manhour information",
+            "properties": {
+              "UUID": {
+                "type": "string",
+                "description": "Unique identifier of the remaining manhour record"
+              },
+              "Hours": {
+                "type": "number",
+                "description": "Remaining hours"
+              },
+              "Owner": {
+                "type": "string",
+                "description": "Owner of the remaining hours"
+              }
+            },
+            "additionalProperties": false
+          },
+          "record_manhour": {
+            "type": "object",
+            "description": "Recorded manhour information",
+            "properties": {
+              "UUID": {
+                "type": "string",
+                "description": "Unique identifier of the recorded manhour record"
+              },
+              "StartTime": {
+                "type": "number",
+                "description": "Start time of work (Unix timestamp)"
+              },
+              "Description": {
+                "type": "string",
+                "description": "Work description"
+              },
+              "Hours": {
+                "type": "number",
+                "description": "Recorded hours"
+              },
+              "Owner": {
+                "type": "string",
+                "description": "Owner who recorded the hours"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": ["task"],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    }
+  },
+  "required": ["teamUUID", "userUUID", "type", "action", "mode", "manhour_info"],
+  "additionalProperties": false
+}

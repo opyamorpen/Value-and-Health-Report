@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Change Issue Status Event Schema",
+  "description": "Change issue status event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:project:issue-status:changed"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["issueID", "trigger", "fromStatus", "toStatus"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "issueID": {
+          "type": "string",
+          "description": "ID of the issue associated with the event."
+        },
+        "trigger": {
+          "type": "string",
+          "enum": ["issueStatusChanged", "transition", "postFunction", "automation"],
+          "description": "Entry points for triggering the update of a issue's status: modifying the status on the work item details page, batch Change of issue status(transition), post actions(postFunction), and process automation(automation)."
+        },
+        "fromStatus": {
+          "$ref": "#/definitions/Status",
+          "description": "Original issue status info."
+        },
+        "toStatus": {
+          "$ref": "#/definitions/Status",
+          "description": "New issue status info."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Status": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID of issue status."
+        }
+      }
+    }
+  }
+}
