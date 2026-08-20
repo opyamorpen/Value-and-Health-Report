@@ -11,6 +11,8 @@ import { MetricsService } from './services/metrics.service'
 import { JobsService } from './services/jobs.service'
 import { ReportsService } from './services/reports.service'
 import { AuditService } from './services/audit.service'
+import { PdfService } from './services/pdf.service'
+import { DetectorsService } from './services/detectors.service'
 import { WebProxyMiddleware } from './proxy'
 import { getPublicPath, createPublicURL, getWebPath, createWebURL, isProd } from './utils'
 import type { MiddlewareConsumer } from '@nestjs/common'
@@ -42,6 +44,8 @@ if (isProd()) {
     JobsService,
     ReportsService,
     AuditService,
+    PdfService,
+    DetectorsService,
   ],
 })
 export class AppModule {

@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto'
 const toKey = (id: string): string => id.replace(/-/g, '_')
 import { CollectorsService } from './collectors.service'
 import { MetricsService } from './metrics.service'
+import { DetectorsService, buildOpportunities } from './detectors.service'
 import { RULE_VERSION } from '../types'
 import type { AuditAction, JobStage, JobStatus, Period, ReportJob, ReportSnapshot } from '../types'
 
@@ -55,6 +56,7 @@ export class JobsService {
   constructor(
     private readonly collectors: CollectorsService,
     private readonly metrics: MetricsService,
+    private readonly detectors: DetectorsService,
   ) {}
 
   async createJob(teamUuid: string, period: Period, requestedBy: string, audit: (action: AuditAction, targetType: string, targetId: string, detail: Record<string, unknown>) => Promise<void>): Promise<ReportJob> {
@@ -129,7 +131,33 @@ export class JobsService {
       const relevantIssueUuids = issues.data.map(i => i.uuid).slice(0, 900)
       const changelogs = await this.collectors.collectChangelogs(job.teamUuid, relevantIssueUuids)
       errors.push(...changelogs.errors)
-      await this.updateJob(job.jobId, { stage: 'computing_metrics', progress: 80 })
+      await this.updateJob(job.jobId, { stage: 'computing_metrics', progress: 70 })
+
+      // 健康度矩阵：探测器逐维度执行（失败维度自动降级无法核验）
+      let healthMatrix
+      try {
+        const detectorResults = await this.detectors.detectAll({
+          teamUuid: job.teamUuid,
+          periodStart: job.period.start,
+          periodEnd: job.period.end,
+        })
+        healthMatrix = {
+          results: detectorResults.map(r => ({
+            dimension: r.dimension,
+            maturity: r.maturity,
+            reason: r.reason,
+            coverage: r.coverage,
+            confidence: r.confidence,
+            lastCollectedAt: r.lastCollectedAt,
+            evidence: r.evidence,
+            suggestion: r.suggestion,
+          })),
+          opportunities: buildOpportunities(detectorResults),
+        }
+      } catch (error) {
+        errors.push(`healthMatrix: ${String((error as Error).message).slice(0, 120)}`)
+      }
+      await this.updateJob(job.jobId, { stage: 'saving_snapshot', progress: 85 })
 
       const valueReport = this.metrics.compute(job.period, { projects, sprints, issues, changelogs }, collectedAt)
 
@@ -142,6 +170,11 @@ export class JobsService {
         period: job.period,
         ruleVersion: job.ruleVersion,
         valueReport,
+        healthMatrix:
+          healthMatrix ?? {
+            results: [],
+            opportunities: [],
+          },
         collectedAt,
       }
       await snapshotEntity.set(toKey(snapshot.snapshotId), {
@@ -151,7 +184,7 @@ export class JobsService {
         period_start: job.period.start,
         period_end: job.period.end,
         rule_version: job.ruleVersion,
-        metrics_json: JSON.stringify(valueReport),
+        metrics_json: JSON.stringify({ value: valueReport, health: snapshot.healthMatrix }),
         narrative_json: JSON.stringify(this.defaultNarrative(valueReport)),
         coverage: this.coverageOf(valueReport),
         created_at: collectedAt,
