@@ -14,7 +14,9 @@
     "build": "npm run build:backend && npm run build:web",
     "build:backend": "nest build && ncc build dist/main.js -o dist/backend",
     "build:web": "vite build",
-    "prepare": "npx husky"
+    "prepare": "npx husky",
+    "test": "jest",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -48,6 +50,7 @@
     "@ones-open/cli": "^0.0.19",
     "@types/express": "^5.0.0",
     "@types/fs-extra": "^11.0.4",
+    "@types/jest": "^30.0.0",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "^22.10.7",
     "@types/react": "~17.0.91",
@@ -61,12 +64,14 @@
     "eslint-plugin-prettier": "^5.2.2",
     "globals": "^16.5.0",
     "husky": "^9.1.7",
+    "jest": "^30.4.2",
     "lint-staged": "^16.2.6",
     "postcss": "^8.5.6",
     "postcss-load-config": "^6.0.1",
     "postcss-preset-env": "^11.2.0",
     "prettier": "^3.4.2",
     "source-map-support": "^0.5.21",
+    "ts-jest": "^29.4.12",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",

@@ -64,7 +64,7 @@ export type CollectResult<T> = {
 }
 
 /** changelog author.name 的系统标识（M2 实测确认） */
-const isBotName = (name: string): boolean => name === '{{system_bot}}' || name === '系统' || name === 'BOT'
+export const isBotName = (name: string): boolean => name === '{{system_bot}}' || name === '系统' || name === 'BOT'
 
 /** ONES createTime 为微秒时间戳（16 位），统一转毫秒 */
 export const normalizeTimestampMs = (value: number): number => {
