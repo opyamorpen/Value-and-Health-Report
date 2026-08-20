@@ -290,6 +290,7 @@ export class DetectorsService {
           dimension: 'D5 代码仓与流水线集成',
           maturity: '无法核验',
           reason: '代码关联数据（提交/MR/流水线）无开放接口且内部接口不可从应用后端访问（T2 实测结论）',
+          failure: 'version',
           coverage: 0,
           confidence: 'low',
           lastCollectedAt: Date.now(),
@@ -341,7 +342,7 @@ export class DetectorsService {
       detectorVersion: 'v7.22-detector-v0.1',
       sources: ['G3 缺口'],
       detect: async () => {
-        const purchased = await this.isPurchased('D7_Performance').catch(() => false)
+        const purchased = await this.isPurchased('D7_Performance')
         if (!purchased) {
           return this.notPurchasedResult('D7 项目集与 Performance', 'performance')
         }
@@ -369,6 +370,7 @@ export class DetectorsService {
         dimension: 'D8 流程自动化',
         maturity: '无法核验',
         reason: '自动化规则与触发记录无开放接口（内部 graphql 不可达）',
+        failure: 'version',
         coverage: 0,
         confidence: 'low',
         lastCollectedAt: Date.now(),
@@ -437,6 +439,7 @@ export class DetectorsService {
         dimension: 'D11 Assistant 与 AI',
         maturity: '无法核验',
         reason: 'AI 会话数据无开放接口（内部接口不可达）',
+        failure: 'version',
         coverage: 0,
         confidence: 'low',
         lastCollectedAt: Date.now(),
@@ -494,7 +497,7 @@ export function buildOpportunities(results: DetectorResult[]): Opportunity[] {
   const activeCore = results.some(r => r.dimension.startsWith('D1') && r.maturity === '活跃使用')
   const opportunities: Opportunity[] = []
   for (const item of notPurchased) {
-    const moduleName = item.dimension.split(' ')[0].replace(/^D\d+_/u, '')
+    const moduleName = item.dimension.replace(/^D\d+[_\s]+/u, '')
     let reason = '组织尚未购买该模块'
     if (activeCore) {
       reason = '核心项目管理已活跃使用，该模块可作为能力扩展'

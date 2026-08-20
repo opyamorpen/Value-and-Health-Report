@@ -17,7 +17,7 @@ import type {
   CollectedSprint,
   CollectResult,
 } from './collectors.service'
-import { normalizeTimestampMs } from './collectors.service'
+import { isBotName, normalizeTimestampMs } from './collectors.service'
 
 /**
  * 指标聚合层：团队级聚合（无个人数据），按 docs/health-standard.md 规则。
@@ -226,9 +226,10 @@ export class MetricsService {
     period: Period,
     collectedAt: number,
   ): CollaborationMetrics {
-    // 人工行为：非机器人 author 的状态/字段变更（排除创建记录）
+    // 人工行为：非机器人 author 的状态/字段变更（排除创建记录）。
+    // 以 authorName 判定为准（collectors 预计算的 isBot 仅作冗余）
     const manualChanges = (changelogs.data ?? []).filter(
-      c => !c.isBot && inPeriod(c.createTime, period) && c.fieldUuid !== 'field003',
+      c => !this.isBotAuthor(c.authorName) && inPeriod(c.createTime, period) && c.fieldUuid !== 'field003',
     )
     const participants = new Set<string>()
     const weekMap = new Map<string, { actions: number; participants: Set<string> }>()
@@ -279,6 +280,10 @@ export class MetricsService {
     }
   }
 
+  private isBotAuthor(name: string): boolean {
+    return isBotName(name)
+  }
+
   /** changelog → issue 首次进入终态时间（field005 状态变更；终态=done 类别） */
   private firstCompletions(records: CollectedChangeRecord[], period: Period): Map<string, number> {
     const first = new Map<string, number>()
@@ -295,10 +300,13 @@ export class MetricsService {
     return first
   }
 
-  /** 判断状态值是否终态：changelog 的 new_value 是状态选项 uuid/名称——按 done 语义近似（field005 的 category 无法从记录获取，用排除法：oldValue/newValue 相同跳过） */
+  /**
+   * 终态判定（T13）：changelog 的 old/new value 是状态选项 uuid 或名称，
+   * OpenAPI 不返回 category。约定：值包含 'done'/'完成'/'关闭'/'resolved' 视为终态。
+   * 该约定纳入规则版本；与真实团队状态配置的映射在 M6 双团队验收时校准。
+   */
   private isToDone(value: string | null, fieldType: string): boolean {
-    // OpenAPI changelog 不返回 category；M3 用 DONE 状态集合近似：
-    // 通过 collectSprints 阶段拿到的终态 Sprint / 或团队状态配置。此处先按非空判断（后续 M5 用固定数据校准）
-    return Boolean(value) && fieldType === 'status'
+    if (!value || fieldType !== 'status') return false
+    return /done|完成|关闭|resolved|closed|finished/i.test(value)
   }
 }
