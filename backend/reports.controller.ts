@@ -3,6 +3,7 @@ import type { Response } from 'express'
 import { JobsService } from './services/jobs.service'
 import { ReportsService } from './services/reports.service'
 import { AuditService } from './services/audit.service'
+import { PdfService } from './services/pdf.service'
 import type { Period } from './types'
 
 /**
@@ -18,6 +19,7 @@ export class ReportsApiController {
     private readonly jobs: JobsService,
     private readonly reports: ReportsService,
     private readonly audit: AuditService,
+    private readonly pdf: PdfService,
   ) {}
 
   /** 创建报告任务：当前团队 + 日期范围（默认近 90 天 vs 前 90 天） */
@@ -97,6 +99,39 @@ export class ReportsApiController {
       return { ok: false, error: 'report not found' }
     }
     return { ok: true, evidence }
+  }
+
+  /** 导出客户版 PDF：按确认板块生成（价值亮点/健康度/机会/附录），返回下载 URL（1h 有效） */
+  @Post('reports/:snapshotId/exports')
+  async exportPdf(
+    @Param('snapshotId') snapshotId: string,
+    @Body() body: { userID?: string; sections?: { valueHighlights?: boolean; healthMatrix?: boolean; opportunities?: boolean; appendix?: boolean } },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const snapshot = await this.reports.getSnapshot(snapshotId)
+    if (!snapshot) {
+      res.status(404)
+      return { ok: false, error: 'report not found' }
+    }
+    try {
+      const result = await this.pdf.generatePdf(
+        {
+          snapshotId: snapshot.snapshotId,
+          teamUuid: snapshot.teamUuid,
+          period: snapshot.period,
+          ruleVersion: snapshot.ruleVersion,
+          coverage: snapshot.coverage,
+          metrics: (snapshot.metrics as Record<string, never>) as never,
+          narrative: snapshot.narrative,
+        },
+        body.sections ?? { valueHighlights: true },
+        body.userID ?? '',
+      )
+      return { ok: true, export: result }
+    } catch (error) {
+      res.status(500)
+      return { ok: false, error: String((error as Error).message).slice(0, 200) }
+    }
   }
 
   @Get('snapshots')

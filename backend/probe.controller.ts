@@ -1,4 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common'
+import { storage } from '@ones-open/node-sdk'
 import { OpenApiClientService } from './services/openapi-client.service'
 import { OpenApiTokenService } from './services/openapi-token.service'
 
@@ -123,6 +124,23 @@ export class ProbeController {
       return { ok: true, size: s.length, preview: s.slice(0, 900) }
     } catch (error) {
       return { ok: false, error: String((error as Error).message).slice(0, 300) }
+    }
+  }
+
+  /** 对象存储 URL 探测（dev 环境 s3-proxy-service 不可达问题定位） */
+  @Get('object-url')
+  async probeObjectUrl() {
+    try {
+      const upload = await storage.object.upload('probe_test.pdf')
+      const info = upload as { getUrl?: () => string; getWebUrl?: () => string; getFields?: () => Record<string, string> }
+      return {
+        ok: true,
+        getUrl: info.getUrl?.() ?? null,
+        getWebUrl: info.getWebUrl?.() ?? null,
+        fields: info.getFields ? Object.keys(info.getFields()) : null,
+      }
+    } catch (error) {
+      return { ok: false, error: String((error as Error).message).slice(0, 200) }
     }
   }
 

@@ -80,6 +80,25 @@ export type ValueReport = {
   planFulfillment: PlanFulfillmentMetrics
 }
 
+export type HealthMatrix = {
+  results: Array<{
+    dimension: string
+    maturity: string
+    reason?: string
+    coverage: number
+    confidence: string
+    lastCollectedAt: number
+    evidence: Array<{ source: string; detail: string }>
+    suggestion?: string
+  }>
+  opportunities: Array<{
+    moduleKey: string
+    moduleName: string
+    reason: string
+    evidence: string
+  }>
+}
+
 /** 快照：不可变指标 + 可编辑叙事 */
 export type ReportSnapshot = {
   snapshotId: string
@@ -88,6 +107,7 @@ export type ReportSnapshot = {
   period: Period
   ruleVersion: string
   valueReport: ValueReport
+  healthMatrix: HealthMatrix
   collectedAt: number
 }
 

@@ -12,20 +12,36 @@ type JobState = {
   snapshotKey: string
 }
 
+type HealthMatrix = {
+  results: Array<{ dimension: string; maturity: string; reason?: string; coverage: number; confidence: string; suggestion?: string }>
+  opportunities: Array<{ moduleKey: string; moduleName: string; reason: string; evidence: string }>
+}
+
+type ValueMetrics = {
+  projects: { newProjects: number; activeProjects: number; statusDistribution: Record<string, number>; status: string }
+  sprints: { created: number; finished: number; onTimeFinished: number; status: string }
+  issues: { created: number; firstCompleted: number; reopened: number; throughputTrend: Array<{ week: string; created: number; completed: number }>; status: string }
+  cycleTime: { p50Hours: number | null; p75Hours: number | null; sampleSize: number; status: string }
+  collaboration: { manualFieldChanges: number; participants: number; weeklyTrend: Array<{ week: string; actions: number; participants: number }>; status: string }
+  planFulfillment: { total: number; onTime: number; rate: number | null; status: string }
+}
+
 type ReportData = {
   snapshotId: string
-  metrics: {
-    projects: { newProjects: number; activeProjects: number; statusDistribution: Record<string, number>; status: string }
-    sprints: { created: number; finished: number; onTimeFinished: number; status: string }
-    issues: { created: number; firstCompleted: number; reopened: number; throughputTrend: Array<{ week: string; created: number; completed: number }>; status: string }
-    cycleTime: { p50Hours: number | null; p75Hours: number | null; sampleSize: number; status: string }
-    collaboration: { manualFieldChanges: number; participants: number; weeklyTrend: Array<{ week: string; actions: number; participants: number }>; status: string }
-    planFulfillment: { total: number; onTime: number; rate: number | null; status: string }
-  }
+  metrics: ValueMetrics
   narrative: Record<string, string>
   coverage: number
   ruleVersion: string
   createdAt: number
+}
+
+/** 后端 metrics_json 兼容两种结构：旧平铺 / 新 {value, health} */
+const normalizeReport = (report: ReportData): { report: ReportData; health: HealthMatrix | null } => {
+  const metrics = report.metrics as unknown as Partial<ValueMetrics> & { value?: ValueMetrics; health?: HealthMatrix }
+  if (metrics.value) {
+    return { report: { ...report, metrics: metrics.value }, health: metrics.health ?? null }
+  }
+  return { report, health: null }
 }
 
 const STAGE_LABELS: Record<string, string> = {
@@ -41,6 +57,13 @@ const STAGE_LABELS: Record<string, string> = {
 }
 
 const fmtDate = (ms: number) => new Date(ms).toLocaleDateString()
+
+const maturityClass = (maturity: string): string => {
+  if (maturity === '活跃使用' || maturity === '形成闭环') return 'active'
+  if (maturity === '已配置未活跃') return 'configured'
+  if (maturity === '未配置') return 'none'
+  return 'bypass'
+}
 
 const MetricCard = ({ title, status, children }: { title: string; status: string; children: React.ReactNode }) => (
   <div className="metric-card">
@@ -67,6 +90,10 @@ const ReportPage = () => {
   const [snapshots, setSnapshots] = useState<Array<{ snapshotId: string; createdAt: number; coverage: number }>>([])
   const [narrativeDraft, setNarrativeDraft] = useState('')
   const [message, setMessage] = useState('')
+  const [sections, setSections] = useState({ valueHighlights: true, healthMatrix: false, opportunities: false, appendix: true })
+  const [exporting, setExporting] = useState(false)
+  const [exportUrl, setExportUrl] = useState('')
+  const [health, setHealth] = useState<HealthMatrix | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
@@ -112,8 +139,10 @@ const ReportPage = () => {
           if (snapResp.ok) {
             const snapData = (await snapResp.json()) as { report?: ReportData }
             if (snapData.report) {
-              setReport(snapData.report)
-              setNarrativeDraft(snapData.report.narrative?.summary ?? '')
+              const normalized = normalizeReport(snapData.report)
+              setReport(normalized.report)
+              setNarrativeDraft(normalized.report.narrative?.summary ?? '')
+              setHealth(normalized.health)
             }
           }
           void loadSnapshots(teamUuid)
@@ -151,8 +180,10 @@ const ReportPage = () => {
     if (resp.ok) {
       const data = (await resp.json()) as { report?: ReportData }
       if (data.report) {
-        setReport(data.report)
-        setNarrativeDraft(data.report.narrative?.summary ?? '')
+        const normalized = normalizeReport(data.report)
+        setReport(normalized.report)
+        setNarrativeDraft(normalized.report.narrative?.summary ?? '')
+        setHealth(normalized.health)
       }
     }
   }
@@ -166,6 +197,34 @@ const ReportPage = () => {
     })
     const data = (await resp.json()) as { ok?: boolean }
     setMessage(data.ok ? '叙事已保存' : '保存失败')
+  }
+
+  const exportPdf = async () => {
+    if (!report) return
+    setExporting(true)
+    setMessage('')
+    try {
+      const resp = await ONES.fetchApp(`/api/reports/${report.snapshotId}/exports`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userID: userUuid, sections }),
+      })
+      const data = (await resp.json()) as { ok?: boolean; export?: { downloadUrl: string }; error?: string }
+      if (data.ok && data.export) {
+        setExportUrl(data.export.downloadUrl)
+        setMessage('PDF 已生成（链接 1 小时内有效）')
+      } else {
+        setMessage(`导出失败: ${data.error ?? '未知错误'}`)
+      }
+    } catch (error) {
+      setMessage(`导出失败: ${String((error as Error).message)}`)
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const toggleSection = (key: keyof typeof sections) => {
+    setSections(prev => ({ ...prev, [key]: !prev[key] }))
   }
 
   const busy = job?.status === 'pending' || job?.status === 'running'
@@ -281,6 +340,61 @@ const ReportPage = () => {
               </div>
             </section>
           )}
+
+          {health && health.results.length > 0 && (
+            <section className="health-section">
+              <h2>应用健康度矩阵</h2>
+              <div className="health-grid">
+                {health.results.map(r => (
+                  <div key={r.dimension} className={`health-item maturity-${maturityClass(r.maturity)}`}>
+                    <div className="health-head">
+                      <span className="health-dim">{r.dimension}</span>
+                      <span className="maturity-badge">{r.maturity}</span>
+                    </div>
+                    {r.reason && <p className="health-reason">{r.reason}</p>}
+                    {r.suggestion && <p className="health-suggestion">建议：{r.suggestion}</p>}
+                  </div>
+                ))}
+              </div>
+              {health.opportunities.length > 0 && (
+                <div className="opportunities">
+                  <h3>增购机会建议（未购模块，不计入健康度）</h3>
+                  {health.opportunities.map(o => (
+                    <div key={o.moduleKey} className="opportunity-item">
+                      <strong>{o.moduleName}</strong>：{o.reason}
+                      <span className="opp-evidence">（{o.evidence}）</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          <section className="export-panel">
+            <h2>导出客户版 PDF</h2>
+            <p className="export-hint">客户版默认隐藏内部错误细节与人员明细；增购建议需显式勾选后才包含。</p>
+            <div className="section-checks">
+              {([
+                ['valueHighlights', '价值亮点'],
+                ['healthMatrix', '健康度矩阵'],
+                ['opportunities', '增购机会建议'],
+                ['appendix', '口径说明'],
+              ] as Array<[keyof typeof sections, string]>).map(([key, label]) => (
+                <label key={key} className={sections[key] ? 'checked' : ''}>
+                  <input type="checkbox" checked={sections[key]} onChange={() => toggleSection(key)} />
+                  {label}
+                </label>
+              ))}
+            </div>
+            <button className="primary" onClick={exportPdf} disabled={exporting}>
+              {exporting ? '生成中…' : '确认并导出 PDF'}
+            </button>
+            {exportUrl && (
+              <a className="download-link" href={exportUrl} target="_blank" rel="noreferrer">
+                下载报告 PDF
+              </a>
+            )}
+          </section>
 
           <footer className="meta">
             规则版本 {report.ruleVersion} · 覆盖率 {Math.round(report.coverage * 100)}% · 生成于 {new Date(report.createdAt).toLocaleString()}
