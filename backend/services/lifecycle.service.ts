@@ -22,6 +22,10 @@ export type InstallCallbackPayload = {
 
 const installationInfo = storage.entity<InstallationInfoEntity>('installation_info')
 
+/** entity key 仅允许 [_a-z0-9]{1,64}：安装 ID 统一规范化（小写 + 非法字符转 _） */
+const toEntityKey = (installationId: string): string =>
+  installationId.toLowerCase().replace(/[^_a-z0-9]/g, '_').slice(0, 64)
+
 /** JWT 声明（生命周期回调 Authorization: Bearer <jwt>） */
 export type LifecycleJwt = {
   iss?: string
@@ -41,8 +45,12 @@ export class LifecycleService {
   private readonly logger = new Logger(LifecycleService.name)
 
   async getInstallation(): Promise<InstallationInfoEntity | undefined> {
-    const installations = await installationInfo.query().getMany()
-    return installations[0]
+    const result = (await installationInfo.query().getMany()) as unknown
+    const rows =
+      (Array.isArray(result) ? result : ((result as { data?: unknown[] })?.data ?? [])) as Array<
+        InstallationInfoEntity & { value?: InstallationInfoEntity }
+      >
+    return rows[0]?.value ?? rows[0]
   }
 
   /** install 回调：无 Authorization 头，10s 内必须 200，重试仅 1 次 */
@@ -56,7 +64,7 @@ export class LifecycleService {
 
     try {
       // 幂等：重复 install 直接覆盖（install 供应新密钥，原子轮换）
-      await installationInfo.set(installationId, {
+      await installationInfo.set(toEntityKey(installationId), {
         installation_id: installationId,
         shared_secret: sharedSecret,
         ones_base_url: onesBaseUrl,
@@ -66,7 +74,9 @@ export class LifecycleService {
       })
       return { ok: true }
     } catch (error) {
-      this.logger.error('install-callback: failed to save installation info')
+      this.logger.error(
+        `install-callback: failed to save installation info: code=${(error as { code?: string }).code} message=${String((error as { err_msg?: string }).err_msg ?? (error as Error).message)}`,
+      )
       return { ok: false, error: 'failed to save install callback data' }
     }
   }
@@ -105,7 +115,7 @@ export class LifecycleService {
 
     const isReplay = installation.status === status && installation.time_stamp === incomingStamp
     if (!isReplay) {
-      await installationInfo.set(installation.installation_id, {
+      await installationInfo.set(toEntityKey(installation.installation_id), {
         ...installation,
         status,
         time_stamp: incomingStamp,

@@ -39,7 +39,7 @@ const TEXT = {
   },
 }
 
-const reportPage = () => {
+const ReportPage = () => {
   const [locale, setLocale] = useState<'zh' | 'en'>('zh')
   const [state, setState] = useState<ConnectionState>({ phase: 'loading' })
 
@@ -97,4 +97,17 @@ const reportPage = () => {
   )
 }
 
-ReactDOM.render(reportPage(), document.getElementById('root'))
+const mount = () => {
+  try {
+    ReactDOM.render(<ReportPage />, document.getElementById('root'))
+  } catch (error) {
+    console.error('report page mount failed:', error)
+    const root = document.getElementById('root')
+    if (root) {
+      root.innerHTML = `<pre style="color:#c00;padding:12px">页面挂载失败: ${String(error)}</pre>`
+    }
+  } finally {
+    document.querySelector('.ones-app-loading')?.remove()
+  }
+}
+mount()

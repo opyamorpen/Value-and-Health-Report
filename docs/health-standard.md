@@ -86,11 +86,14 @@
 
 ### D5 代码仓、合并请求与流水线集成
 
-- **配置**：已关联代码仓 ≥ 1（I-1 `devopsScmRepos`）。
-- **活跃**：周期内**关联到工作项**的提交（`devopsTasksCommits.timestamp` 在周期内）或 MR 状态更新 ≥ A。注意：仅仓库有提交但未关联工作项不计入——健康度关注的是代码与研发流程的连接，不是仓库本身的提交量。
-- **闭环**：L3 链——周期内 ≥ C 条：提交关联工作项 →（MR 合并 或 pipeline run 成功）→ 工作项进入终态。
-- **数据源**：I-1/I-2（graphql Task / repo-data-key）。OpenAPI 无对应端点（缺口 G1）。
-- **示例**（v7.22.1 实测，团队 VAVx7WoU）：工作项 GCSX-7982 有 5 条关联提交 + 1 个关联 MR（`devopsCommitCount=5, devopsPullRequestsCount=1`），提交含 author/hash/message/repo/branch/timestamp。
+> **采集限制（M2 T2 实测结论）**：代码关联数据（提交/MR/流水线）在应用运行时不可获取——OpenAPI 无对应端点（G1），内部接口无法从后端调用（T2：App/用户委托/hosted token 全部 401）。本维度按降级规则执行，弱信号 T12 待验证。
+
+- **配置**：devops 数据（仓库列表/提交/MR）不可达 → 无法确认配置状态。
+- **购买判定**：license 清单（O-A11）确认「代码集成」是否已购；未购 → `未购买`（进增购机会）。
+- **已购时**：数据源不可达 → `无法核验`（按 §7；**不得**推断为未配置或未活跃）。
+- **弱信号（T12）**：若 `object_link_count` 字段可在有代码关联的工作项类型上查询（ONESQL/字段元数据），可作为「业务对象已关联」的弱证据，报告「有配置迹象（覆盖率 N%）」。
+- **浏览器端证据参考**（非运行时数据源，见 evidence-matrix B 节）：GCSX-7982 有 5 条关联提交 + 1 个关联 MR（`devopsCommitCount=5, devopsPullRequestsCount=1`），字段含 author/hash/message/repo/branch/timestamp。
+- **闭环**：L3 链（提交关联工作项 → MR 合并/流水线成功 → 工作项终态）在数据源恢复前不可判定，维持 `无法核验`。
 
 ### D6 工时、资源与排期
 
