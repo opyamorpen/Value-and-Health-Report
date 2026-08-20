@@ -34,6 +34,19 @@ export class OpenApiTokenService {
     this.cachedToken = undefined
   }
 
+  /** 用户委托 token（T2 验证：内部接口可能要求用户身份） */
+  async getUserAccessToken(userID: string): Promise<string> {
+    const installation = await this.requireInstallation()
+    return oauth.getAccessTokenByInstallationInfo(
+      {
+        installation_id: installation.installation_id,
+        shared_secret: installation.shared_secret,
+        ones_base_url: installation.ones_base_url,
+      },
+      userID,
+    )
+  }
+
   async getOnesBaseUrl(): Promise<string> {
     return (await this.requireInstallation()).ones_base_url
   }

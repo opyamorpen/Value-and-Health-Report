@@ -14,29 +14,32 @@
 
 ## A. 公共 OpenAPI（优先数据源）
 
-契约来源：`.ones/ones-app-specs/openapi-spec.yaml`（2026-08-13 官方包，SHA256 `f9b72c71…`）。**尚未用 App Identity 实测**（待 M2 安装后执行，见 T5）。
+契约来源：`.ones/ones-app-specs/openapi-spec.yaml`（2026-08-13 官方包，SHA256 `f9b72c71…`）。
 
-| 编号 | 端点 | 用途 | 关键约束 | scope |
-| --- | --- | --- | --- | --- |
-| O-A1 | `GET /openapi/v2/project/projects` | 项目列表 | `limit` 默认 50、上限 100（超出截断）；`cursor` 分页 | `read:project:project` |
-| O-A2 | `GET /openapi/v2/project/projects/{projectID}/sprints` | Sprint 列表 | **不支持分页/过滤**；返回全部可见未删除 Sprint | `read:project:sprint` |
-| O-A3 | `GET /openapi/v2/project/issues` | 工作项列表 | `limit` 上限 100；仅支持 `projectID+issueTypeID` 联合过滤，**无日期过滤**（周期统计靠 ONESQL/changelog） | `read:project:issue` |
-| O-A4 | `POST /openapi/v2/project/issueFields/changeLog/query` | 变更日志 | 按 issue 分页（`cursor+limit`，limit 上限 1000）；`issue_uuids` 必填，单批 ≤ 1000；返回记录上限 **10000，超出时 `records_truncated=true`**；`create_time`/`update_time` 过滤的是 issue 字段而非 version 字段 | `read:project:issueField` |
-| O-A5 | `GET /openapi/v2/project/workLog/timesEstimated` | 团队级预估工时 | `limit` 上限 100；支持 `startDate/endDate`（YYYY-MM-DD）、`userID`、`issueID` | `read:project:workLog-timeEstimated` |
-| O-A6 | `GET /openapi/v2/project/issues/{issueID}/workLog/simple/timesSpent` | 工作项登记工时 | `limit` 上限 100 | `read:project:issue-timeSpent` |
-| O-A7 | `GET /openapi/v2/wiki/spaces` | Wiki 空间 | 支持 `requestUserID`（OAuth bot 代指定用户） | `read:wiki:space` |
-| O-A8 | `GET /openapi/v2/wiki/spaces/{spaceID}/pages`、`GET /openapi/v2/wiki/pages/{pageID}` | Wiki 页面 | — | `read:wiki:page` |
-| O-A9 | `GET /openapi/v2/testcase/libraries` | 测试用例库 | `limit` 上限 100 | `read:testcase:library` |
-| O-A10 | `GET /openapi/v2/account/users/search`、`/account/users/batch`、`/account/users/thirdparty/binding/batch` | 用户与第三方绑定 | `limit` 上限 100 | `read:account:user` |
-| O-A11 | `GET /openapi/v2/license/apps` | 组织购买应用 | **需组织管理员**；返回 appID/policy/scale/usage | `read:license:app` |
-| O-A12 | `POST /openapi/v3alpha/onesql/query` | ONESQL 查询 | 周期过滤的主力（`now(-90d)` 等时间函数、`v$cursor` 分页）；manifest 需声明 `read:project:issue` | `read:project:issue` |
-| O-A13 | `GET /openapi/v2/account/teams` | 组织团队列表 | — | `read:account:teams` |
+**M2 已用 App Identity 实测（2026-08-20，应用 `app_09b374c462ec4d64` @ demo-plugin.ones.pro v7.22.1）**：下表 ✅ 端点均已通过 App token 实测返回 200 与正确数据结构。
 
-注：sprints 相关端点要求的 `read:project:sprint` 未出现在 spec 全局 scope 枚举中，但端点 security 已声明；M2 安装时以实测为准（见 T11）。
+| 编号 | 端点 | 用途 | 关键约束 | scope | 实测 |
+| --- | --- | --- | --- | --- | --- |
+| O-A1 | `GET /openapi/v2/project/projects` | 项目列表 | `limit` 默认 50、上限 100（超出截断）；`cursor` 分页；**项目 UUID 在 `id` 字段（非 uuid）** | `read:project:project` | ✅（limit=100 返回 100 条） |
+| O-A2 | `GET /openapi/v2/project/projects/{projectID}/sprints` | Sprint 列表 | **不支持分页/过滤**；返回全部可见未删除 Sprint | `read:project:sprint` | ✅（T11 确认 scope 可用） |
+| O-A3 | `GET /openapi/v2/project/issues` | 工作项列表 | `limit` 上限 100；仅支持 `projectID+issueTypeID` 联合过滤，**无日期过滤**（周期统计靠 ONESQL/changelog） | `read:project:issue` | ✅（经 issue-detail 端点验证） |
+| O-A4 | `POST /openapi/v2/project/issueFields/changeLog/query` | 变更日志 | 按 issue 分页（`cursor+limit`，limit 上限 1000）；`issue_uuids` 必填，单批 ≤ 1000；返回记录上限 **10000，超出时 `records_truncated=true`**；机器人记录的 author.name 为 `{{system_bot}}`（可直接识别） | `read:project:issueField` | ✅（GCSX-7982 返回完整变更记录） |
+| O-A5 | `GET /openapi/v2/project/workLog/timesEstimated` | 团队级预估工时 | `limit` 上限 100；支持 `startDate/endDate`（YYYY-MM-DD）、`userID`、`issueID` | `read:project:workLog-timeEstimated` | 待 M3 |
+| O-A6 | `GET /openapi/v2/project/issues/{issueID}/workLog/simple/timesSpent` | 工作项登记工时 | `limit` 上限 100 | `read:project:issue-timeSpent` | 待 M3 |
+| O-A7 | `GET /openapi/v2/wiki/spaces` | Wiki 空间 | 支持 `requestUserID`（OAuth bot 代指定用户） | `read:wiki:space` | 待 M3 |
+| O-A8 | `GET /openapi/v2/wiki/spaces/{spaceID}/pages`、`GET /openapi/v2/wiki/pages/{pageID}` | Wiki 页面 | — | `read:wiki:page` | 待 M3 |
+| O-A9 | `GET /openapi/v2/testcase/libraries` | 测试用例库 | `limit` 上限 100 | `read:testcase:library` | 待 M3 |
+| O-A10 | `GET /openapi/v2/account/users/search`、`/account/users/batch`、`/account/users/thirdparty/binding/batch` | 用户与第三方绑定 | `limit` 上限 100 | `read:account:user` | 待 M3 |
+| O-A11 | `GET /openapi/v2/license/apps` | 组织购买应用 | **需组织管理员**；返回 appID/policy/scale/usage | `read:license:app` | ✅（返回 project/wiki/desk/product 等 license 清单） |
+| O-A12 | `POST /openapi/v3alpha/onesql/query` | ONESQL 查询 | 周期过滤的主力（`now(-90d)` 等时间函数、`v$cursor` 分页）；manifest 需声明 `read:project:issue`；**仅查 issue 表**（`from project` 等报 NotFound.WorkItemType） | `read:project:issue` | ✅（多团队查询返回正确） |
+| O-A13 | `GET /openapi/v2/account/teams` | 组织团队列表 | — | `read:account:teams` | ✅（57 个团队） |
+| O-A14 | `GET /openapi/v2/project/searchIssueFields` | 字段元数据 | 字段类型清单（无 code/commit 类型——代码关联不是工作项字段） | `read:project:issueField` | ✅（500 字段，类型清单确认） |
 
 ## B. 内部接口（CapabilityDetector 兜底，锁定 v7.22.x）
 
-**重要**：内部接口均为登录态浏览器验证（cookie 会话）。**从应用后端调用的鉴权方式未验证**（见 T2，M2 关键风险项）。
+**M2 T2 结论（2026-08-20 实测）**：内部接口（页面 API）**无法从应用后端调用**——已实测 App token、用户委托 token（oauth type 需含 user）、ONES_HOSTED_TOKEN 三种鉴权方式调用 `/project/api/project/team/{team}/items/graphql`，全部返回 `401 AuthFailure.InvalidToken`。内部接口使用独立的 cookie/session 鉴权体系，与 OpenAPI OAuth token 不互通。
+
+**影响**：B 节接口仅可作为「浏览器端证据采集」参考，不能作为应用运行时数据源。D5（代码集成）的运行时数据采集不可行——按健康度标准 §7 降级处理（详见 E 节 R1）。
 
 | 编号 | 端点 | 用途 | 验证证据 |
 | --- | --- | --- | --- |
@@ -88,25 +91,41 @@ query Task($key: Key) {
 
 ## E. 缺口与待验证清单
 
+**M2 已关闭项**：T2（内部接口鉴权——结论不可行）、T5（OpenAPI 实测——A 节 ✅ 项）、T11（`read:project:sprint` scope——可用）、T1（机器人标识——changelog 中 author.name 为 `{{system_bot}}`）。
+
 | 编号 | 内容 | 影响 | 计划 |
 | --- | --- | --- | --- |
-| G1 | OpenAPI 无代码集成/SCM/pipeline 端点（spec 确认 0 命中） | D5 必须依赖内部接口 I-1/I-2 | T2 通过后实现探测器 |
-| G2 | 测试执行数据（测试计划/用例执行记录）无 OpenAPI 端点 | D4 活跃判定 | M4 探测 |
+| G1 | OpenAPI 无代码集成/SCM/pipeline 端点（spec 确认 0 命中）+ T2 内部接口不可达 | **D5 运行时探测不可行** | 见 R1 决策 |
+| G2 | 测试执行数据（测试计划/用例执行记录）无 OpenAPI 端点 | D4 活跃判定 | M4 探测（预期同样受 T2 限制） |
 | G3 | 项目集/Performance 数据源未确认 | D7 | M4 探测 |
 | G4 | Desk 工单数据源未确认 | D9 | M4 探测 |
-| **T2** | **内部接口从应用后端调用的鉴权方式**（App token / 用户委托 token / 其他）——当前仅浏览器 cookie 验证 | **I-1~I-8 全部依赖此结论，M2 最高优先级** | M2 安装应用后逐一实测 |
-| T1 | OpenAPI 用户模型中机器人标识字段 | §8 机器人过滤 | M2 |
-| T3 | Wiki 页面编辑时间明细（活跃判定） | D3 | M2 |
+| T3 | Wiki 页面编辑时间明细（活跃判定） | D3 | M3 |
 | T4 | 测试执行行为数据源 | D4 | M4 |
-| T5 | OpenAPI 全部端点的 App Identity 实测（分页/限流/401/403 行为） | O-A1~A13 | M2 |
 | T6 | 资源/排期视图使用数据 | D6 闭环 | M4 |
 | T7 | 项目集对象与效能报表数据 | D7 | M4 |
 | T8 | SSO 登录/目录同步/IM 通知行为数据 | D10 | M4 |
 | T9 | Desk 工单生命周期数据 | D9 | M4 |
 | T10 | changelog 10000 条截断的实测复现 | 韧性测试 | M5 |
-| T11 | `read:project:sprint` scope 实际可用性 | O-A2 | M2 |
+| T12 | object_link_count 字段在代码集成团队的表现（VAVx7WoU 团队无此字段，需在有代码关联的工作项类型上验证） | D5 弱信号 | M3 |
+
+### R1 决策记录：D5 代码集成的运行时采集方案
+
+T2 + G1 联合结论：代码关联数据（提交/MR/流水线）在应用运行时不可获取。D5 维度调整为：
+
+1. **购买判定**：license 清单（O-A11 ✅）判断「代码集成」是否已购。
+2. **已购 + 无法核验**：无法确认活跃度的部分按健康度标准 §7 判 `无法核验`（不是未配置——配置证据需要 devops 数据）。
+3. **弱信号补充（T12 待验证）**：若 `object_link_count` 字段在有代码关联的工作项类型上可查（ONESQL/字段元数据），可作为「已关联业务对象」的弱证据，将 D5 从 `无法核验` 提升为「有配置迹象」。
+4. README 规格中「内部接口漂移返回无法核验」的安全降级在此场景下成为常态——这符合规格设计（探测目标，不取消安全降级）。
 
 ## F. 验收对照
 
-- README 验收步骤 1（证据矩阵）：本文件 + 健康度标准，OpenAPI 契约来自官方 spec 包；OpenAPI 实测与内部接口鉴权验证（T2/T5）依赖 M2 应用安装后执行。
+- README 验收步骤 1（证据矩阵）：本文件 + 健康度标准；OpenAPI 契约 + App Identity 实测（M2 ✅）+ 内部接口浏览器契约（M1 ✅）+ 后端可达性结论（T2 ✅ 不可达）。
 - README 验收步骤 6（两类样本团队）：已确认 VAVx7WoU（活跃）与 CXBRmzxd（已配置未活跃）。
+
+## G. M2 运行时实测补充（2026-08-20）
+
+- **应用安装链路**：`ones dev --install` → 应用中心显示「已启用/开发中」；install 回调携带 `installation_id/shared_secret/ones_base_url`（base64 密钥）。
+- **entity storage**：key 必须匹配 `/^[_a-z0-9]{1,64}$/`（安装 ID 需规范化）；查询返回 `{page_info, data: [{key, value}]}` 结构（value 才是实体数据）。
+- **appSettingPages**：extension key 必须为 `entries`（`report_entries` 报 InvalidParameter）；入口显示在**组织级应用详情页**的 tab（「配置中心 > 应用管理 > 已获取应用 > customer-value-health」）；customEntries 页面经 relay 分发加载。
+- **前端页面**：React 17 + ReactDOM.render（JSX 元素挂载，不能直接调用组件函数——Invalid hook call）；ONES 沙箱将 HTML 复制为 blob iframe 并剥离 script 由宿主注入执行。
+- **用户委托 token**：oauth type 需含 `user`；为用户生成 token 需该用户已在组织中（`not allow generating token for the user` 错误表示无权限）。

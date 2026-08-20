@@ -31,13 +31,14 @@
         "read:license:app"
       ],
       "type": [
-        "app"
+        "app",
+        "user"
       ]
     },
     "extensions": {
       "appSettingPages": [
         {
-          "key": "report_entries",
+          "key": "entries",
           "funcs": {
             "customEntries": "/app_setting_entries"
           }
