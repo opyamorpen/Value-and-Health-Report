@@ -87,6 +87,249 @@
               "range_attribute": "updated_at"
             }
           ]
+        },
+        {
+          "name": "report_job",
+          "attributes": {
+            "job_id": {
+              "type": "string",
+              "length": 36,
+              "required": true
+            },
+            "team_uuid": {
+              "type": "string",
+              "length": 32,
+              "required": true
+            },
+            "period_start": {
+              "type": "integer",
+              "required": true
+            },
+            "period_end": {
+              "type": "integer",
+              "required": true
+            },
+            "compare_start": {
+              "type": "integer",
+              "required": true
+            },
+            "compare_end": {
+              "type": "integer",
+              "required": true
+            },
+            "rule_version": {
+              "type": "string",
+              "length": 32,
+              "required": true
+            },
+            "status": {
+              "type": "string",
+              "length": 16,
+              "required": true
+            },
+            "stage": {
+              "type": "string",
+              "length": 32,
+              "required": true
+            },
+            "progress": {
+              "type": "integer",
+              "required": true
+            },
+            "error": {
+              "type": "string",
+              "length": 512,
+              "required": true
+            },
+            "snapshot_key": {
+              "type": "string",
+              "length": 36,
+              "required": true
+            },
+            "requested_by": {
+              "type": "string",
+              "length": 32,
+              "required": true
+            },
+            "created_at": {
+              "type": "integer",
+              "required": true
+            },
+            "updated_at": {
+              "type": "integer",
+              "required": true
+            }
+          },
+          "indexes": [
+            {
+              "name": "idx_job_team_created",
+              "range_attribute": "created_at",
+              "partition": [
+                "team_uuid"
+              ]
+            },
+            {
+              "name": "idx_job_status",
+              "range_attribute": "created_at",
+              "partition": [
+                "status"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "report_snapshot",
+          "attributes": {
+            "snapshot_id": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "job_id": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "team_uuid": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "period_start": {
+              "type": "integer",
+              "required": true
+            },
+            "period_end": {
+              "type": "integer",
+              "required": true
+            },
+            "rule_version": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "metrics_json": {
+              "type": "text",
+              "required": true
+            },
+            "narrative_json": {
+              "type": "text",
+              "required": true
+            },
+            "coverage": {
+              "type": "integer",
+              "required": true
+            },
+            "created_at": {
+              "type": "integer",
+              "required": true
+            }
+          },
+          "indexes": [
+            {
+              "name": "idx_snapshot_team_created",
+              "range_attribute": "created_at",
+              "partition": [
+                "team_uuid"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "narrative_revision",
+          "attributes": {
+            "revision_id": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "snapshot_id": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "editor_uuid": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "narrative_json": {
+              "type": "text",
+              "required": true
+            },
+            "created_at": {
+              "type": "integer",
+              "required": true
+            }
+          },
+          "indexes": [
+            {
+              "name": "idx_revision_snapshot_created",
+              "range_attribute": "created_at",
+              "partition": [
+                "snapshot_id"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "audit_log",
+          "attributes": {
+            "log_id": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "team_uuid": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "actor_uuid": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "action": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "target_type": {
+              "type": "string",
+              "length": 32,
+              "required": true
+            },
+            "target_id": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "detail_json": {
+              "type": "text",
+              "required": true
+            },
+            "created_at": {
+              "type": "integer",
+              "required": true
+            }
+          },
+          "indexes": [
+            {
+              "name": "idx_audit_team_created",
+              "range_attribute": "created_at",
+              "partition": [
+                "team_uuid"
+              ]
+            },
+            {
+              "name": "idx_audit_target",
+              "range_attribute": "created_at",
+              "partition": [
+                "target_id"
+              ]
+            }
+          ]
         }
       ],
       "object": true
