@@ -1,0 +1,111 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Create Project Field Event Schema",
+  "description": "Create project field event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:setting:project-field:created"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["id", "name", "propertyTypeLabel"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "id": {
+          "type": "string",
+          "description": "ID of the project field."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the project field."
+        },
+        "propertyTypeLabel": {
+          "type": "string",
+          "enum": [
+            "date",
+            "float",
+            "integer",
+            "multi_line_text",
+            "multi_option",
+            "option",
+            "text",
+            "time",
+            "user",
+            "user_list"
+          ],
+          "description": "Type label of the project field."
+        },
+        "fieldSetting": {
+          "$ref": "#/definitions/FieldSetting",
+          "description": "Settings of the project field."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "FieldSetting": {
+      "type": "object",
+      "properties": {
+        "option": {
+          "$ref": "#/definitions/OptionInfo",
+          "description": "Valid for type of project field which is 'option' or 'multi_option'."
+        }
+      }
+    },
+    "OptionInfo": {
+      "type": "object",
+      "properties": {
+        "optionTotal": {
+          "type": "number",
+          "description": "Total number of the options"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Option"
+          },
+          "description": "Part of the option items (the maximum number is 1024)."
+        }
+      }
+    },
+    "Option": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID of the project field option."
+        },
+        "value": {
+          "description": "Value of the project field option."
+        }
+      }
+    }
+  }
+}

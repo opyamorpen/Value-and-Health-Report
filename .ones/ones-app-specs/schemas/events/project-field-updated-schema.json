@@ -1,0 +1,111 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Update Project Field Event Schema",
+  "description": "Update project field event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:setting:project-field:updated"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["id", "propertyTypeLabel"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "id": {
+          "type": "string",
+          "description": "ID of the project field."
+        },
+        "propertyTypeLabel": {
+          "type": "string",
+          "enum": [
+            "date",
+            "float",
+            "integer",
+            "multi_line_text",
+            "multi_option",
+            "option",
+            "text",
+            "time",
+            "user",
+            "user_list"
+          ],
+          "description": "Type label of the project field."
+        },
+        "basicInfoChanges": {
+          "$ref": "#/definitions/BasicInfoChanges",
+          "description": "Basic information change of the project field."
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Option"
+          },
+          "description": "Option change, which is valid for 'option' or 'multi_option' type of the project field."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "BasicInfoChanges": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "$ref": "#/definitions/Name"
+        }
+      }
+    },
+    "Name": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "type": "string",
+          "description": "Old name of the project field."
+        },
+        "newValue": {
+          "type": "string",
+          "description": "New name of the project field."
+        }
+      }
+    },
+    "Option": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "type": "string",
+          "description": "Original option value of the project field."
+        },
+        "newValue": {
+          "type": "string",
+          "description": "New option value of the project field."
+        }
+      }
+    }
+  }
+}

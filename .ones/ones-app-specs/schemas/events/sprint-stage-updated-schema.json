@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Update Sprint Stage Event Schema",
+  "description": "Update sprint stage event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:project:sprint-stage:updated"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["id", "projectID", "category"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "projectID": {
+          "type": "string",
+          "description": "ID of the project associated with the event."
+        },
+        "id": {
+          "type": "string",
+          "description": "ID of the stage."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the stage."
+        },
+        "basicInfoChanges": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/BasicInfoChanges"
+          },
+          "description": "Sprint basic information change content."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "BasicInfoChanges": {
+      "type": "object",
+      "properties": {
+        "position": {
+          "$ref": "#/definitions/Position"
+        },
+        "name": {
+          "$ref": "#/definitions/Name"
+        }
+      }
+    },
+    "Position": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "type": "number",
+          "description": "Original sprint stage position."
+        },
+        "newValue": {
+          "type": "number",
+          "description": "New sprint stage position."
+        }
+      }
+    },
+    "Name": {
+      "type": "object",
+      "properties": {
+        "oldValue": {
+          "type": "string",
+          "description": "Original sprint stage name."
+        },
+        "newValue": {
+          "type": "string",
+          "description": "New sprint stage name."
+        }
+      }
+    }
+  }
+}

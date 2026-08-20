@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Help Info Request",
+  "type": "object",
+  "properties": {
+    "org_uuid": {
+      "type": "string",
+      "description": "ONES organization UUID"
+    },
+    "language": {
+      "type": "string",
+      "description": "IETF language tag, e.g. 'en','ja','zh' etc."
+    }
+  },
+  "required": ["org_uuid", "language"],
+  "additionalProperties": false
+}

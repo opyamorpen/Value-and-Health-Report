@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "User Department Membership Event Schema",
+  "description": "User department membership event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:user:department_membership"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["teamID", "userID", "departmentID", "action"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "userID": {
+          "type": "string",
+          "description": "ID of the user associated with the membership change."
+        },
+        "departmentID": {
+          "type": "string",
+          "description": "ID of the department associated with the membership change."
+        },
+        "action": {
+          "type": "string",
+          "description": "Membership action, for example join or leave."
+        }
+      }
+    }
+  }
+}

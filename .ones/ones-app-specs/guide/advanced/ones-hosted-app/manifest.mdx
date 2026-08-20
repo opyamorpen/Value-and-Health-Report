@@ -1,0 +1,264 @@
+---
+id: manifest
+sidebar_position: 2
+---
+
+# Hosted App Manifest
+
+## Overview
+
+The Hosted App manifest file (`opkx.json`) is a JSON configuration file that describes your Hosted App's metadata, runtime configuration, and resource requirements. This file is required for all Hosted Apps and must be included in the `.opkx` package.
+
+## File Location
+
+The `opkx.json` file must be placed in the root directory of your application package and will be included in the `.opkx` file when packaging your application.
+
+## Schema Structure
+
+The `opkx.json` file contains two main sections:
+
+1. **`app`**: Application metadata and configuration
+2. **`runtime`**: Runtime environment and resource configuration
+
+## App Configuration
+
+- **`id`**: Unique application identifier (format: `app_` + 16 lowercase alphanumeric characters)
+- **`name`**: Application name (1-64 characters)
+- **`version`**: Semantic version (e.g., `v1.0.0`)
+- **`auth`**: Authentication configuration (currently only `jwt` is supported)
+- **`lifecycle_callback`**: Lifecycle callback endpoints
+- **`desc`** (optional): Application description
+- **`logo`** (optional): Application logo URL
+- **`oauth`** (optional): OAuth configuration
+- **`events`** (optional): Event webhook configuration
+- **`extensions`** (optional): Extension points configuration
+- **`ones_version`** (optional): ONES version compatibility requirements
+
+## Runtime Configuration
+
+The **`runtime`** field configures the runtime environment for your Hosted App.
+
+### Required Runtime Fields
+
+- **`type`**: Runtime type
+  - `"ones-node-22"`: Use ONES's built-in Node.js 22 runtime
+  - `"container"`: Use a custom container image
+- **`healthcheck`**: Health check configuration
+  - **`path`**: HTTP health check path (must start with `/`)
+
+### Optional Runtime Fields
+
+- **`resources`** (object, optional): Resource limits
+  - **`cpu`** (string, required if resources specified): CPU resource (e.g., `"500m"`, `"1"`, `"1.5"`)
+  - **`memory`** (string, required if resources specified): Memory resource (e.g., `"256Mi"`, `"1Gi"`)
+- **`arch`** (string, optional): Runtime architecture
+  - `"amd64"` (default)
+  - `"arm64"`
+- **`image`** (string, optional): Container image name (required for `container` type)
+  - Must start with `ones/platform-app/`
+  - Format: `ones/platform-app/{name}:{tag}`
+- **`command`** (array, optional): Startup command array
+  - Example: `["node", "index.js"]`
+  - Maximum 8 items
+- **`args`** (array, optional): Startup arguments
+  - Appended to command
+  - Maximum 8 items
+
+## Example Manifest
+
+Here's a complete example of an `opkx.json` file:
+
+```json title="Example/opkx.json"
+{
+  "app": {
+    "id": "app_1234567890abcdef",
+    "name": "Sample Hosted App",
+    "desc": "This is a sample hosted app",
+    "version": "v1.0.0",
+    "auth": {
+      "type": "jwt"
+    },
+    "lifecycle_callback": {
+      "install": "/install_cb"
+    },
+    "oauth": {
+      "type": ["user"],
+      "scope": ["read:project:issue"]
+    },
+    "events": {
+      "url": "/events/webhook",
+      "types": [
+        {
+          "eventType": "ones:project:issue:created"
+        }
+      ]
+    }
+  },
+  "runtime": {
+    "type": "ones-node-22",
+    "healthcheck": {
+      "path": "/health"
+    },
+    "resources": {
+      "cpu": "500m",
+      "memory": "512Mi"
+    },
+    "command": ["node", "dist/backend/index.js"]
+  }
+}
+```
+
+## Runtime Type Examples
+
+### Using ONES Node.js 22 Runtime
+
+This is the simplest configuration for Node.js applications:
+
+```json
+{
+  "app": {
+    "id": "app_1234567890abcdef",
+    "name": "My Node.js App",
+    "version": "v1.0.0",
+    "auth": {
+      "type": "jwt"
+    },
+    "lifecycle_callback": {
+      "install": "/install_cb"
+    }
+  },
+  "runtime": {
+    "type": "ones-node-22",
+    "healthcheck": {
+      "path": "/health"
+    },
+    "resources": {
+      "cpu": "500m",
+      "memory": "512Mi"
+    },
+    "command": ["node", "dist/backend/index.js"]
+  }
+}
+```
+
+### Using Custom Container
+
+For custom container images:
+
+```json
+{
+  "app": {
+    "id": "app_1234567890abcdef",
+    "name": "My Custom App",
+    "version": "v1.0.0",
+    "auth": {
+      "type": "jwt"
+    },
+    "lifecycle_callback": {
+      "install": "/install_cb"
+    }
+  },
+  "runtime": {
+    "type": "container",
+    "image": "ones/platform-app/my-app:v1.0.0",
+    "healthcheck": {
+      "path": "/health"
+    },
+    "command": ["node", "index.js"],
+    "args": ["--port", "3000"],
+    "resources": {
+      "cpu": "500m",
+      "memory": "512Mi"
+    },
+    "arch": "amd64"
+  }
+}
+```
+
+## Resource Configuration
+
+### CPU Resources
+
+CPU can be specified in two formats:
+
+- **Millicores**: `"500m"` (500 millicores = 0.5 CPU)
+- **Cores**: `"1"` or `"1.5"` (1 core or 1.5 cores)
+
+Examples:
+
+- `"500m"` - 0.5 CPU cores
+- `"1"` - 1 CPU core
+- `"1.5"` - 1.5 CPU cores
+
+### Memory Resources
+
+Memory must be specified with a unit suffix:
+
+- **Mi**: Mebibytes (e.g., `"256Mi"`)
+- **Gi**: Gibibytes (e.g., `"1Gi"`)
+- **M**: Megabytes (e.g., `"512M"`)
+- **G**: Gigabytes (e.g., `"2G"`)
+
+Examples:
+
+- `"256Mi"` - 256 mebibytes
+- `"512Mi"` - 512 mebibytes
+- `"1Gi"` - 1 gibibyte
+- `"2G"` - 2 gigabytes
+
+## Health Check Configuration
+
+The health check endpoint is used by the platform to monitor your application's health. The path must:
+
+- Start with `/`
+- Return a successful HTTP status code (`200`) when the application is healthy
+- Be accessible without authentication
+
+Example health check implementation:
+
+```ts title="backend/app.controller.ts"
+@Controller()
+export class AppController {
+  @Get('/health_check')
+  healthCheck() {
+    return { ok: true }
+  }
+}
+```
+
+## Validation
+
+The manifest file is validated against the schema when you upload your `.opkx` file. Common validation errors include:
+
+- Missing required fields
+- Invalid field formats (e.g., incorrect app ID format)
+- Invalid resource specifications
+
+## Schema Reference
+
+import { JsonSchemaViewer } from '@site/src/components'
+
+You can refer to the Hosted App manifest schema to know more about the complete schema definition.
+
+<JsonSchemaViewer
+  schemaPath="json-schemas/app_opkx_schema.json"
+  title="Hosted App manifest schema"
+  collapsible={true}
+/>
+
+## Development
+
+See [ONES CLI](../../../abilities/ones-cli/ones-cli.mdx) to develop and deploy Hosted Apps.
+
+## Best Practices
+
+1. **Version Management**: Always use semantic versioning for your app version
+2. **Resource Sizing**: Start with minimal resources and scale up as needed
+3. **Health Checks**: Implement a lightweight health check endpoint
+4. **Error Handling**: Ensure your application handles lifecycle callbacks gracefully
+
+## Next Steps
+
+- Learn about the [Hosted App Storage](./storage.mdx) format
+- Review the [Getting Started guide](../../getting-started/getting-started.mdx) for creating your first app
+- Explore [ONES CLI](../../../abilities/ones-cli/ones-cli.mdx) for building and deploying Hosted Apps

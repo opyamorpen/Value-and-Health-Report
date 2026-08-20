@@ -1,0 +1,724 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ONES Hosted App OPKX Manifest Schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["app", "runtime"],
+  "definitions": {
+    "httpUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://[^\\s?#]+$",
+      "maxLength": 256,
+      "description": "Must start with http(s):// and not contain ? or #"
+    },
+    "urlPath": {
+      "type": "string",
+      "pattern": "^/[^#\\s]*$",
+      "maxLength": 256,
+      "description": "Must start with / and not contain #"
+    },
+    "semanticVersion": {
+      "type": "string",
+      "pattern": "^v\\d+\\.\\d+\\.\\d+$",
+      "maxLength": 32,
+      "description": "Semantic version (e.g., v1.0.0)"
+    },
+    "logoUrl": {
+      "type": "string",
+      "format": "uri-reference",
+      "pattern": "^(https?://[^\\s?#]+|/[^\\s?#]+)$",
+      "maxLength": 256,
+      "description": "Supports http(s) URLs or relative paths such as /logo"
+    }
+  },
+  "properties": {
+    "app": {
+      "type": "object",
+      "description": "Application configuration. See app_schema.json for complete definition.",
+      "additionalProperties": false,
+      "properties": {
+        "auth": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "description": "Authentication type (currently only 'jwt' is supported)",
+              "enum": ["jwt"],
+              "type": "string"
+            }
+          },
+          "required": ["type"]
+        },
+        "desc": {
+          "maxLength": 1024,
+          "type": ["string", "null"]
+        },
+        "events": {
+          "additionalProperties": false,
+          "properties": {
+            "types": {
+              "items": {
+                "properties": {
+                  "eventType": {
+                    "description": "The event defined by ONES which the app will listen to.",
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["eventType"],
+                "type": "object"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            "url": {
+              "description": "Must start with / and not contain #",
+              "maxLength": 256,
+              "pattern": "^/[^#\\s]*$",
+              "type": "string"
+            }
+          },
+          "required": ["url", "types"],
+          "type": ["object", "null"]
+        },
+        "extensions": {
+          "additionalProperties": false,
+          "properties": {
+            "manhourValidator": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "key": {
+                    "description": "Unique identifier for the extension in the app.",
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "funcs": {
+                    "properties": {
+                      "validate": {
+                        "description": "Must start with /",
+                        "maxLength": 256,
+                        "minLength": 1,
+                        "pattern": "^/[^\\s?#]*([?][^\\s#]*)?([#][^\\s]*)?$",
+                        "type": "string"
+                      }
+                    },
+                    "required": ["validate"],
+                    "type": "object"
+                  }
+                },
+                "required": ["key", "funcs"],
+                "type": "object"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "accountThirdparty": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "key": {
+                    "description": "Unique identifier for the extension in the app.",
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "funcs": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "customLoginUrl": {
+                        "description": "Must start with /",
+                        "maxLength": 256,
+                        "minLength": 1,
+                        "pattern": "^/[^\\s?#]*([?][^\\s#]*)?([#][^\\s]*)?$",
+                        "type": "string"
+                      },
+                      "authLoginInfo": {
+                        "description": "Must start with /",
+                        "maxLength": 256,
+                        "minLength": 1,
+                        "pattern": "^/[^\\s?#]*([?][^\\s#]*)?([#][^\\s]*)?$",
+                        "type": "string"
+                      },
+                      "directorySync": {
+                        "description": "Must start with /",
+                        "maxLength": 256,
+                        "minLength": 1,
+                        "pattern": "^/[^\\s?#]*([?][^\\s#]*)?([#][^\\s]*)?$",
+                        "type": "string"
+                      },
+                      "messageNotify": {
+                        "description": "Must start with /",
+                        "maxLength": 256,
+                        "minLength": 1,
+                        "pattern": "^/[^\\s?#]*([?][^\\s#]*)?([#][^\\s]*)?$",
+                        "type": "string"
+                      },
+                      "helpInfo": {
+                        "description": "Must start with /",
+                        "maxLength": 256,
+                        "minLength": 1,
+                        "pattern": "^/[^\\s?#]*([?][^\\s#]*)?([#][^\\s]*)?$",
+                        "type": "string"
+                      }
+                    },
+                    "required": ["helpInfo"],
+                    "type": "object"
+                  },
+                  "slots": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "ones:account:thirdparty:logo": {
+                        "description": "Must start with /",
+                        "maxLength": 256,
+                        "minLength": 1,
+                        "pattern": "^/[^\\s?#]*([?][^\\s#]*)?([#][^\\s]*)?$",
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "config": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "useCustomLoginAuth": {
+                        "type": "boolean"
+                      },
+                      "useDirectorySource": {
+                        "type": "boolean"
+                      },
+                      "useNotification": {
+                        "type": "boolean"
+                      },
+                      "notificationUserIdType": {
+                        "default": "ONES",
+                        "enum": ["ONES", "Custom"],
+                        "type": "string"
+                      }
+                    },
+                    "required": ["useCustomLoginAuth", "useDirectorySource", "useNotification"],
+                    "type": "object"
+                  }
+                },
+                "required": ["key", "funcs", "config"],
+                "type": "object"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "appSettingPages": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "funcs": {
+                    "properties": {
+                      "customEntries": {
+                        "description": "Must start with /",
+                        "maxLength": 256,
+                        "minLength": 1,
+                        "pattern": "^/[^\\s?#]*([?][^\\s#]*)?([#][^\\s]*)?$",
+                        "type": "string"
+                      }
+                    },
+                    "required": ["customEntries"],
+                    "type": "object"
+                  },
+                  "key": {
+                    "description": "Unique identifier for the extension in the app.",
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["key", "funcs"],
+                "type": "object"
+              },
+              "maxItems": 1,
+              "minItems": 1,
+              "type": "array"
+            },
+            "formControlExtension": {
+              "items": {
+                "additionalProperties": true,
+                "properties": {
+                  "key": {
+                    "description": "Unique identifier for the extension in the app.",
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "slots": {
+                    "additionalProperties": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "minProperties": 1,
+                    "type": "object"
+                  },
+                  "config": {
+                    "additionalProperties": true,
+                    "properties": {
+                      "name": {
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "fieldUUIDs": {
+                        "items": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "supportForms": {
+                        "items": {
+                          "enum": ["detail", "create", "transition"],
+                          "type": "string"
+                        },
+                        "minItems": 1,
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "controlTips": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "additionalProperties": {
+                              "minLength": 1,
+                              "type": "string"
+                            },
+                            "minProperties": 1,
+                            "type": "object"
+                          }
+                        ]
+                      }
+                    },
+                    "required": ["name", "fieldUUIDs", "supportForms"],
+                    "type": "object"
+                  }
+                },
+                "required": ["key", "slots", "config"],
+                "type": "object"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            }
+          },
+          "type": ["object", "null"]
+        },
+        "id": {
+          "description": "Format: app_ + 16 lowercase alphanumeric chars",
+          "maxLength": 20,
+          "minLength": 20,
+          "pattern": "^app_[0-9a-z]{16}$",
+          "type": "string"
+        },
+        "lifecycle_callback": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "disabled": {
+              "$ref": "#/definitions/urlPath"
+            },
+            "enabled": {
+              "$ref": "#/definitions/urlPath"
+            },
+            "install": {
+              "$ref": "#/definitions/urlPath"
+            },
+            "uninstalled": {
+              "$ref": "#/definitions/urlPath"
+            }
+          },
+          "required": ["install"]
+        },
+        "logo": {
+          "type": ["string", "null"],
+          "$ref": "#/definitions/logoUrl",
+          "maxLength": 256
+        },
+        "name": {
+          "maxLength": 64,
+          "minLength": 1,
+          "type": "string"
+        },
+        "oauth": {
+          "additionalProperties": false,
+          "properties": {
+            "redirect_url": {
+              "description": "Must start with / and not contain #",
+              "maxLength": 256,
+              "pattern": "^/[^#\\s]*$",
+              "type": ["string", "null"]
+            },
+            "scope": {
+              "items": {
+                "pattern": "^[a-z]+:[0-9a-zA-Z\\-]+:[0-9a-zA-Z\\-]+$",
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "type": {
+              "items": {
+                "enum": ["app", "user"],
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": ["array", "null"],
+              "uniqueItems": true
+            }
+          },
+          "required": ["scope"],
+          "type": ["object", "null"]
+        },
+        "ones_version": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "max": {
+              "$ref": "#/definitions/semanticVersion",
+              "description": "Maximum compatible ONES version (e.g., v6.39.9)"
+            },
+            "min": {
+              "$ref": "#/definitions/semanticVersion",
+              "description": "Minimum compatible ONES version (e.g., v6.30.0)"
+            }
+          }
+        },
+        "version": {
+          "$ref": "#/definitions/semanticVersion"
+        }
+      },
+      "required": ["id", "name", "version", "auth", "lifecycle_callback"]
+    },
+    "runtime": {
+      "$schema": "http://json-schema.org/draft/07/schema#",
+      "type": "object",
+      "required": ["type", "healthcheck"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["ones-node-22", "container"],
+          "description": "Runtime type: built-in ONES Node.js 22 or a custom container."
+        },
+        "healthcheck": {
+          "type": "object",
+          "required": ["path"],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "maxLength": 256,
+              "pattern": "^/.*",
+              "description": "HTTP healthcheck path, must start with '/'."
+            }
+          }
+        },
+        "resources": {
+          "type": "object",
+          "required": ["cpu", "memory"],
+          "additionalProperties": false,
+          "properties": {
+            "cpu": {
+              "type": "string",
+              "pattern": "^([0-9]+m|[0-9]+(\\.[0-9])?)$",
+              "description": "CPU resource value. With 'm' it must be an integer; without 'm' it can be an integer or one decimal (e.g. 500m, 1, 1.5)."
+            },
+            "memory": {
+              "type": "string",
+              "pattern": "^[0-9]+(M|G|Gi|Mi)$",
+              "description": "Memory resource value. Only M/G/Gi/Mi are supported (e.g. 256Mi, 1Gi)."
+            }
+          }
+        },
+        "arch": {
+          "type": "string",
+          "enum": ["amd64", "arm64"],
+          "description": "Runtime architecture. Default is amd64."
+        },
+        "image": {
+          "type": "string",
+          "maxLength": 256,
+          "pattern": "^ones/platform-app/[a-z0-9-_]+:[a-z0-9-_.]+$",
+          "description": "Image name must start with ones/platform-app/"
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "minItems": 1,
+          "maxItems": 8,
+          "description": "Startup command array, e.g. [\"node\", \"index.js\"]."
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 1024
+          },
+          "maxItems": 8,
+          "description": "Startup args array, appended to command."
+        }
+      }
+    },
+    "ones": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "storage": {
+          "type": "object",
+          "description": "Storage configuration for entity and object storage",
+          "additionalProperties": false,
+          "properties": {
+            "entities": {
+              "type": "array",
+              "description": "Entity storage definitions",
+              "maxItems": 64,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "attributes"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Entity name",
+                    "maxLength": 32,
+                    "pattern": "^[_a-z0-9]{1,32}$"
+                  },
+                  "attributes": {
+                    "type": "object",
+                    "description": "Entity attributes definition",
+                    "maxProperties": 32,
+                    "propertyNames": {
+                      "pattern": "^[_a-z0-9]{1,64}$"
+                    },
+                    "patternProperties": {
+                      "^[_a-z0-9]{1,64}$": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": ["boolean", "integer", "float", "string", "text"],
+                            "description": "Attribute data type"
+                          },
+                          "length": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 2048,
+                            "description": "String length (required for string type)"
+                          },
+                          "required": {
+                            "type": "boolean",
+                            "description": "Whether the attribute is required"
+                          },
+                          "default": {
+                            "description": "Default value for the attribute"
+                          }
+                        },
+                        "required": ["type"],
+                        "allOf": [
+                          {
+                            "if": {
+                              "properties": {
+                                "type": {
+                                  "const": "string"
+                                }
+                              }
+                            },
+                            "then": {
+                              "required": ["length"]
+                            }
+                          },
+                          {
+                            "if": {
+                              "required": ["type", "default"],
+                              "properties": {
+                                "type": {
+                                  "const": "boolean"
+                                }
+                              }
+                            },
+                            "then": {
+                              "properties": {
+                                "default": {
+                                  "type": "boolean"
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "if": {
+                              "required": ["type", "default"],
+                              "properties": {
+                                "type": {
+                                  "const": "integer"
+                                }
+                              }
+                            },
+                            "then": {
+                              "properties": {
+                                "default": {
+                                  "type": "integer"
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "if": {
+                              "required": ["type", "default"],
+                              "properties": {
+                                "type": {
+                                  "const": "float"
+                                }
+                              }
+                            },
+                            "then": {
+                              "properties": {
+                                "default": {
+                                  "type": "number"
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "if": {
+                              "required": ["type", "default"],
+                              "properties": {
+                                "type": {
+                                  "const": "string"
+                                }
+                              }
+                            },
+                            "then": {
+                              "properties": {
+                                "default": {
+                                  "type": "string",
+                                  "maxLength": 64
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "if": {
+                              "required": ["type", "default"],
+                              "properties": {
+                                "type": {
+                                  "const": "text"
+                                }
+                              }
+                            },
+                            "then": {
+                              "properties": {
+                                "default": {
+                                  "type": "string",
+                                  "maxLength": 64
+                                }
+                              }
+                            }
+                          },
+                          {
+                            "if": {
+                              "anyOf": [
+                                {
+                                  "not": {
+                                    "required": ["required"]
+                                  }
+                                },
+                                {
+                                  "required": ["required"],
+                                  "properties": {
+                                    "required": {
+                                      "const": false
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            "then": {
+                              "required": ["default"]
+                            }
+                          },
+                          {
+                            "if": {
+                              "required": ["required"],
+                              "properties": {
+                                "required": {
+                                  "const": true
+                                }
+                              }
+                            },
+                            "then": {
+                              "not": {
+                                "required": ["default"]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "indexes": {
+                    "type": "array",
+                    "description": "Custom index definitions",
+                    "maxItems": 64,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["name", "range_attribute"],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "description": "Index name",
+                          "maxLength": 64,
+                          "pattern": "^[_a-z0-9]{1,64}$"
+                        },
+                        "range_attribute": {
+                          "type": "string",
+                          "description": "Attribute name for range query",
+                          "maxLength": 64,
+                          "pattern": "^[_a-z0-9]{1,64}$"
+                        },
+                        "partition": {
+                          "type": "array",
+                          "description": "Partition attributes",
+                          "items": {
+                            "type": "string",
+                            "maxLength": 64,
+                            "pattern": "^[_a-z0-9]{1,64}$"
+                          }
+                        },
+                        "unique": {
+                          "type": "boolean",
+                          "description": "Whether the index is unique"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "object": {
+              "type": "boolean",
+              "description": "Whether object storage is enabled"
+            }
+          }
+        }
+      }
+    }
+  }
+}

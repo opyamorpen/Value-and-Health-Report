@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Delete Milestone Event Schema",
+  "description": "Delete milestone event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:project:ppm-milestone:deleted"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["ids", "projectID"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of deleted milestone IDs."
+        },
+        "projectID": {
+          "type": "string",
+          "description": "ID of the project associated with the event."
+        }
+      }
+    }
+  }
+}

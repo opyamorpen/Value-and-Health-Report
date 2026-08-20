@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Custom Login URL Request",
+  "type": "object",
+  "properties": {
+    "org_uuid": {
+      "type": "string",
+      "description": "ONES organization UUID"
+    },
+    "redirect_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL that the user will be redirected to after complete your auth implementation"
+    }
+  },
+  "required": ["org_uuid", "redirect_url"],
+  "additionalProperties": false
+}

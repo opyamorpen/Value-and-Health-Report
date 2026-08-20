@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Delete Project Role Event Schema",
+  "description": "Delete project role event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:project:project-role:deleted"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["projectID", "roles"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "projectID": {
+          "type": "string",
+          "description": "ID of the project associated with the event."
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Role"
+          },
+          "description": "List of roles deleted from the project."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Role": {
+      "type": "object",
+      "required": ["roleID"],
+      "properties": {
+        "roleID": {
+          "type": "string",
+          "description": "ID of a project role."
+        }
+      }
+    }
+  }
+}

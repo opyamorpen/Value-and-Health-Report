@@ -1,0 +1,107 @@
+---
+id: app-events
+sidebar_position: 2
+---
+
+# Subscribe to Events
+
+## Overview
+
+In this chapter, you will add event subscription on top of the same template app from [Getting Started](../getting-started/).
+
+You will complete one small milestone:
+
+1. Receive issue events in your app and print callback logs.
+
+This helps you understand the core event flow clearly:
+
+- Declare subscribed events in `opkx.json`
+- Expose a webhook endpoint in backend
+- Return success quickly to avoid timeout
+- Trigger events in ONES and verify callback logs
+
+## Before You Start
+
+- You already have a template app created by `ones create my-ones-app` according to the [Getting Started](../getting-started/) guide.
+- You can build and install the app in ONES.
+- You can view your app backend logs.
+
+## Check Event Configuration in Manifest
+
+1. Update `version` in `app` to a new version `v0.0.3`.
+2. Add (or confirm) this `events` declaration in `opkx.json`:
+
+```json title="opkx.json"
+{
+  "app": {
+    "version": "v0.0.3",
+    "events": {
+      "url": "/events/webhook",
+      "types": [
+        {
+          "eventType": "ones:project:issue:created"
+        },
+        {
+          "eventType": "ones:project:issue:updated"
+        }
+      ]
+    }
+  }
+}
+```
+
+:::tip
+`app.events.url` is your callback path in the app backend, and `app.events.types` is the event list to subscribe.
+:::
+
+## Build a Minimal Event Webhook
+
+### 1. Modify app's webhook handler
+
+Edit `backend/app.controller.ts` and add:
+
+:::warning
+Return `200` or `204` immediately after receiving the callback, then handle business logic asynchronously.
+:::
+
+```typescript title="app.controller.ts"
+import { Body, HttpCode, Post } from '@nestjs/common'
+import type { EventBody } from '@ones-open/node-sdk'
+
+@Post('/events/webhook')
+@HttpCode(200)
+handleEventWebhook(@Body() body: EventBody<any>) {
+  console.log(
+    'Received Event Webhook Callback:',
+    'eventType:',
+    body.eventType,
+    'happenTime:',
+    body.timestamp,
+  )
+  return { ok: true }
+}
+```
+
+### 2. Build and verify
+
+1. Run `ones build`
+2. Update(upload) the latest `.opkx` package in ONES App Center
+3. Check your app backend logs in app's runtime info.
+
+You should see logs like:
+
+```text
+[2026-02-12T18:36:24+08:00] Received Event Webhook Callback: eventType: ones:project:issue:created happenTime: 1770892584771
+[2026-02-12T18:36:29+08:00] Received Event Webhook Callback: eventType: ones:project:issue:updated happenTime: 1770892589970
+```
+
+## Troubleshooting
+
+- **No callback logs**: confirm `app.events.url` and `app.events.types` in `opkx.json`, then rebuild and re-upload the package
+- **Callback timeout**: return `200`/`204` first, move heavy logic to async processing
+- **Unexpected event content**: print and inspect the full callback body before adding business logic
+
+## Next Steps
+
+- Learn more in [Event list](../../abilities/events/)
+- Continue with [Use Extensions](./app-extensions)

@@ -1,0 +1,246 @@
+---
+id: app-oauth
+sidebar_position: 1
+---
+
+# Access Open API
+
+## Overview
+
+In this chapter, you will call ONES Open API on top of the same template app from [Getting Started](/docs/guide/getting-started/).
+
+You will complete one small milestone:
+
+1. Trigger one Open API call in `enabled` callback and print the response in backend logs.
+
+This keeps the first OpenAPI experience simple:
+
+- Reuse installation credentials already saved in `install` callback
+- Trigger logic from `enabled` callback
+- Use `@ones-open/node-sdk` OAuth helper to get access token
+- Call `/openapi/v2/account/teams`
+
+## Before You Start
+
+- You already have a template app created by `ones create my-ones-app` according to the [Getting Started](/docs/guide/getting-started/) guide.
+- You can build and install the app in ONES.
+- Your template app already has `ones.storage.entities.installation_secret` in `opkx.json`.
+- Your template app already has `install_cb` that persists `installation_id`, `shared_secret`, and `ones_base_url`.
+
+## Update Manifest for OAuth and Lifecycle Callback
+
+Update `opkx.json` with:
+
+1. Update `version` in `app` to a new version `v0.0.2`.
+2. Add `enabled` callback in `lifecycle_callback`.
+3. Keep `read:account:teams` in `app.oauth.scope`.
+4. Add `app` into `app.oauth.type` so backend can request app token.
+
+```json title="opkx.json"
+{
+  "app": {
+    "version": "v0.0.2",
+    "lifecycle_callback": {
+      "install": "/install_cb",
+      "enabled": "/enabled_cb"
+    },
+    "oauth": {
+      "scope": ["read:account:teams"],
+      "type": ["user", "app"]
+    }
+  }
+}
+```
+
+:::tip
+Keep your existing `events`, `extensions`, and `ones.storage.entities` config unchanged. Only update the fields above.
+:::
+
+## Build OpenAPI Calling Flow
+
+### 1. Create OpenAPI service
+
+Create `backend/services/openapi.service.ts`:
+
+```ts title="backend/services/openapi.service.ts"
+import { Injectable } from '@nestjs/common'
+import { oauth } from '@ones-open/node-sdk'
+import type { InstallationInfo } from '@ones-open/node-sdk'
+
+@Injectable()
+export class OpenApiService {
+  async callONESOpenAPI(
+    installationInfo: InstallationInfo,
+    api: string,
+    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+    body?: unknown,
+    userID?: string,
+  ): Promise<unknown> {
+    const accessToken = await oauth.getAccessTokenByInstallationInfo(installationInfo, userID)
+    const apiURL = new URL(api, installationInfo.ones_base_url)
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${accessToken}`,
+    }
+
+    const requestOptions: RequestInit = {
+      method,
+      headers,
+    }
+
+    if (body !== undefined) {
+      headers['Content-Type'] = 'application/json'
+      requestOptions.body = JSON.stringify(body)
+    }
+
+    const response = await fetch(apiURL.toString(), requestOptions)
+
+    if (!response.ok) {
+      const responseText = await response.text()
+      throw new Error(
+        `ONES OpenAPI call failed: ${response.status} ${response.statusText}, response: ${responseText}`,
+      )
+    }
+
+    if (response.status === 204) return null
+    return await response.json()
+  }
+}
+```
+
+### 2. Reuse install info, then call OpenAPI in enabled callback
+
+Update `backend/app.service.ts`:
+
+```ts title="backend/app.service.ts"
+import { Injectable, OnApplicationShutdown } from '@nestjs/common'
+import { storage } from '@ones-open/node-sdk'
+import type { InstallationInfo } from '@ones-open/node-sdk'
+import { OpenApiService } from './services/openapi.service'
+
+export type InstallCallbackPayload = {
+  installation_id: string
+  shared_secret: string
+  ones_base_url: string
+}
+
+export type EnabledCallbackPayload = {
+  installation_id: string
+}
+
+type InstallationSecretEntity = {
+  installation_id: string
+  shared_secret: string
+  ones_base_url: string
+  updated_at: number
+}
+
+const installationSecretEntity = storage.entity<InstallationSecretEntity>('installation_secret')
+
+@Injectable()
+export class AppService implements OnApplicationShutdown {
+  constructor(private readonly openApiService: OpenApiService) {}
+
+  healthCheck() {
+    return { ok: true }
+  }
+
+  async installCallback(payload: InstallCallbackPayload) {
+    const installationId = payload.installation_id.trim()
+    const row: InstallationSecretEntity = {
+      installation_id: installationId,
+      shared_secret: payload.shared_secret.trim(),
+      ones_base_url: payload.ones_base_url.trim(),
+      updated_at: Date.now(),
+    }
+
+    try {
+      await installationSecretEntity.set(installationId, row)
+      return { ok: true }
+    } catch (error) {
+      console.error('install-callback: failed to save shared_secret', error)
+      return { ok: false, error: 'failed to save install callback data' }
+    }
+  }
+
+  async enabledCallback(payload: EnabledCallbackPayload) {
+    const installationInfo = await this.getInstallationInfo(payload.installation_id.trim())
+    if (!installationInfo) {
+      return { ok: false, error: 'installation info not found' }
+    }
+
+    try {
+      const body = await this.openApiService.callONESOpenAPI(
+        installationInfo,
+        '/openapi/v2/account/teams',
+        'GET',
+      )
+      console.log(`enabled-callback: fetched teams ${JSON.stringify(body)}`)
+      return { ok: true, message: 'enabled callback handled' }
+    } catch (error) {
+      console.error('enabled-callback: openapi call failed', error)
+      return { ok: false, error: 'failed to call openapi' }
+    }
+  }
+
+  onApplicationShutdown(signal?: string) {
+    console.log('shutdown signal:', signal)
+  }
+
+  private async getInstallationInfo(installationID: string): Promise<InstallationInfo | null> {
+    const row = await installationSecretEntity.get(installationID)
+    if (!row) return null
+    return {
+      installation_id: row.installation_id,
+      shared_secret: row.shared_secret,
+      ones_base_url: row.ones_base_url,
+    }
+  }
+}
+```
+
+### 3. Expose enabled callback and register service
+
+In `backend/app.controller.ts`, update import and add endpoint:
+
+```ts title="backend/app.controller.ts"
+import { AppService, type EnabledCallbackPayload, type InstallCallbackPayload } from './app.service'
+
+@Post('/enabled_cb')
+@HttpCode(200)
+enabledCallback(@Body() body: EnabledCallbackPayload) {
+  return this.appService.enabledCallback(body)
+}
+```
+
+In `backend/app.module.ts`, add `OpenApiService` into `providers`:
+
+```ts title="backend/app.module.ts"
+import { OpenApiService } from './services/openapi.service'
+
+// ... other codes
+providers: [AppService, RecentWorkItemsService, OpenApiService]
+```
+
+## Build and Verify
+
+1. Run `ones build`.
+2. Update(upload) the latest `.opkx` package in ONES App Center.
+3. Check backend logs in app's runtime info.
+
+You should see log output like:
+
+```text
+enabled-callback: fetched teams {"result":"SUCCESS","data":[...]}
+```
+
+## Troubleshooting
+
+- **`oauth.getAccessTokenByInstallationInfo is not a function`**: check your installed `@ones-open/node-sdk` version and update to a version that includes OAuth helper APIs.
+- **`installation info not found`**: `install_cb` data was not saved. Re-install the app and check install callback logs.
+- **OpenAPI 403**: check `app.oauth.scope` and `app.oauth.type`, then rebuild and re-upload.
+- **OpenAPI call failed**: check persisted `ones_base_url`, `installation_id`, and `shared_secret`.
+
+## Next Steps
+
+- Learn [Scopes](/docs/abilities/openapi/auth/scope) and more about [Open API](/docs/abilities/openapi).
+- Continue with [Subscribe to Events](/docs/guide/getting-started/app-events).

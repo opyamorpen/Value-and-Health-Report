@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Delete Issue Field Event Schema",
+  "description": "Delete issue field event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:setting:issue-field:deleted"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "id": {
+          "type": "string",
+          "description": "ID of the issue field associated with the event."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the issue field associated with the event."
+        }
+      }
+    }
+  }
+}

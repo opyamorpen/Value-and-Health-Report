@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Create Sprint Stage Event Schema",
+  "description": "Create sprint stage event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:project:sprint-stage:created"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["id", "projectID", "trigger", "name", "category", "position"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "projectID": {
+          "type": "string",
+          "description": "ID of the project associated with the event."
+        },
+        "id": {
+          "type": "string",
+          "description": "ID of the stage."
+        },
+        "trigger": {
+          "type": "string",
+          "enum": ["sprintStageCreated", "copyProject"],
+          "description": "Triggers for creating sprint stage entries: Create sprint stage (sprintStageCreated), Copy project (copyProject)."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the stage."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the stage."
+        },
+        "position": {
+          "type": "number",
+          "description": "Position of the stage."
+        }
+      }
+    }
+  }
+}

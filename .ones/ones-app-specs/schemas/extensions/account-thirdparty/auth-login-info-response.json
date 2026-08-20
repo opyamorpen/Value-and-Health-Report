@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "/extensions/account-thirdparty/auth-login-info-response.json",
+  "title": "Auth Login Info Response",
+  "description": "User info response which represents the user profile will show in ONES",
+  "type": "object",
+  "properties": {
+    "third_party_user_id": {
+      "type": "string",
+      "description": "Unique user ID in your system"
+    },
+    "name": {
+      "type": "string",
+      "description": "User name"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "User email"
+    },
+    "avatar": {
+      "type": "string",
+      "format": "uri",
+      "description": "User avatar with absolute url which show in ONES"
+    },
+    "title": {
+      "type": "string",
+      "description": "User's `Position` field in ONES user profile"
+    },
+    "id_number": {
+      "type": "string",
+      "description": "User's `Staff ID` field in ONES user profile"
+    },
+    "company": {
+      "type": "string",
+      "description": "User's `Organization` field in ONES user profile"
+    },
+    "department_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "The user's department id which your defined, if empty, user will be in the root department(same as value `-1`)"
+    }
+  },
+  "required": ["third_party_user_id"],
+  "additionalProperties": false
+}

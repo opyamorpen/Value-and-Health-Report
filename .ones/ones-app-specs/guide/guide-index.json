@@ -1,0 +1,98 @@
+{
+  "sourceRoot": "docs/guide",
+  "docCount": 13,
+  "assetCount": 5,
+  "docs": [
+    {
+      "id": "getting-started",
+      "title": "Getting Started",
+      "path": "guide/getting-started/getting-started.mdx",
+      "section": "getting-started",
+      "category": "Getting Started"
+    },
+    {
+      "id": "app-oauth",
+      "title": "Access Open API",
+      "path": "guide/getting-started/access-openapi.mdx",
+      "section": "getting-started",
+      "category": "Getting Started"
+    },
+    {
+      "id": "app-events",
+      "title": "Subscribe to Events",
+      "path": "guide/getting-started/subscribe-to-events.mdx",
+      "section": "getting-started",
+      "category": "Getting Started"
+    },
+    {
+      "id": "app-extensions",
+      "title": "Use Extensions",
+      "path": "guide/getting-started/use-extensions.mdx",
+      "section": "getting-started",
+      "category": "Getting Started"
+    },
+    {
+      "id": "app-websdk",
+      "title": "Use Web SDK",
+      "path": "guide/getting-started/use-websdk.mdx",
+      "section": "getting-started",
+      "category": "Getting Started"
+    },
+    {
+      "id": "advanced/advanced",
+      "title": "Advanced Guide",
+      "path": "guide/advanced/advanced.mdx",
+      "section": "advanced",
+      "category": "Advanced Guide"
+    },
+    {
+      "id": "app-lifecycle",
+      "title": "App Lifecycle",
+      "path": "guide/advanced/app-lifecycle.mdx",
+      "section": "advanced",
+      "category": "Advanced Guide"
+    },
+    {
+      "id": "app-security",
+      "title": "App Security",
+      "path": "guide/advanced/app-security.mdx",
+      "section": "advanced",
+      "category": "Advanced Guide"
+    },
+    {
+      "id": "ones-hosted-app",
+      "title": "ONES Hosted App",
+      "path": "guide/advanced/ones-hosted-app/ones-hosted-app.mdx",
+      "section": "advanced",
+      "category": "ONES Hosted"
+    },
+    {
+      "id": "manifest",
+      "title": "Hosted App Manifest",
+      "path": "guide/advanced/ones-hosted-app/manifest.mdx",
+      "section": "advanced",
+      "category": "ONES Hosted"
+    },
+    {
+      "id": "storage",
+      "title": "Hosted App Storage",
+      "path": "guide/advanced/ones-hosted-app/storage.mdx",
+      "section": "advanced",
+      "category": "ONES Hosted"
+    },
+    {
+      "id": "externally-hosted-app",
+      "title": "Externally Hosted App",
+      "path": "guide/advanced/externally-hosted-app/externally-hosted-app.mdx",
+      "section": "advanced",
+      "category": "Externally Hosted"
+    },
+    {
+      "id": "externally-hosted-app-local-development",
+      "title": "Externally Hosted App: Local Development",
+      "path": "guide/advanced/externally-hosted-app/externally-app-local-development.mdx",
+      "section": "advanced",
+      "category": "Externally Hosted"
+    }
+  ]
+}

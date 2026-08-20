@@ -1,0 +1,272 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Create Issue Event Schema",
+  "description": "Create issue event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:project:issue:created"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["issueID", "statusID", "scopeID", "basicInfoChanges", "properties", "relations"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "issueID": {
+          "type": "string",
+          "description": "ID of the issue associated with the event."
+        },
+        "statusID": {
+          "type": "string",
+          "description": "Status ID of work item."
+        },
+        "scopeID": {
+          "type": "string",
+          "description": "Scope ID of work item."
+        },
+        "basicInfoChanges": {
+          "type": "object",
+          "required": ["creator", "assignee", "createTime"],
+          "properties": {
+            "creator": {
+              "$ref": "#/definitions/Creator"
+            },
+            "assignee": {
+              "$ref": "#/definitions/Assignee"
+            },
+            "createTime": {
+              "$ref": "#/definitions/CreateTime"
+            }
+          }
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Property"
+          },
+          "description": "Change of work item attributes"
+        },
+        "relations": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/Relation"
+          },
+          "description": "Change of associated attributes of work item"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Creator": {
+      "type": "object",
+      "required": ["fromID", "toID"],
+      "properties": {
+        "fromID": {
+          "type": "string",
+          "description": "Original creator ID"
+        },
+        "toID": {
+          "type": "string",
+          "description": "New creator ID"
+        }
+      }
+    },
+    "Assignee": {
+      "type": "object",
+      "required": ["fromID", "toID"],
+      "properties": {
+        "fromID": {
+          "type": "string",
+          "description": "Original assignee ID"
+        },
+        "toID": {
+          "type": "string",
+          "description": "New assignee ID"
+        }
+      }
+    },
+    "CreateTime": {
+      "type": "object",
+      "required": ["fromTime", "toTime"],
+      "properties": {
+        "fromTime": {
+          "type": "number",
+          "description": "Original creation time"
+        },
+        "toTime": {
+          "type": "number",
+          "description": "New creation time"
+        }
+      }
+    },
+    "Property": {
+      "type": "object",
+      "required": ["issueID", "fieldID", "propertyType", "oldValue", "newValue"],
+      "properties": {
+        "issueID": {
+          "type": "string",
+          "description": "Issue ID"
+        },
+        "fieldID": {
+          "type": "string",
+          "description": "Issue field ID"
+        },
+        "propertyType": {
+          "type": "number",
+          "enum": [1, 2, 3, 4, 5, 6, 7, 9, 10, 33, 1001, 1002, 1011, 1012, 1013, 1014],
+          "description": "Issue field type",
+          "enumDescriptions": {
+            "1": "Issue title",
+            "2": "Integer",
+            "3": "Multi-line Text",
+            "4": "Single-line Text",
+            "5": "Time",
+            "6": "Date",
+            "7": "Float",
+            "9": "Issue Description",
+            "10": "Rich text issue description",
+            "33": "Issue progress",
+            "1001": "Issue single option script property",
+            "1002": "Issue multiple options script property",
+            "1011": "Single option sprint",
+            "1012": "Due Date for issue",
+            "1013": "Planned Start Date for issue",
+            "1014": "Planned Completion Date for issue"
+          }
+        },
+        "oldValue": {
+          "$ref": "#/definitions/PropertyValue",
+          "description": "Issue field old value"
+        },
+        "newValue": {
+          "$ref": "#/definitions/PropertyValue",
+          "description": "Issue field new value"
+        }
+      }
+    },
+    "PropertyValue": {
+      "type": "object",
+      "properties": {
+        "stringValue": {
+          "type": "string",
+          "description": "String value"
+        },
+        "numberValue": {
+          "type": "number",
+          "description": "Numeric value"
+        },
+        "entityValue": {
+          "$ref": "#/definitions/EntityRef",
+          "description": "Entity value"
+        },
+        "entityArray": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EntityRef"
+          },
+          "description": "Entity array"
+        }
+      }
+    },
+    "EntityRef": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Entity ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Entity name"
+        }
+      }
+    },
+    "Relation": {
+      "type": "object",
+      "required": ["issueID", "fieldID", "relationType"],
+      "properties": {
+        "issueID": {
+          "type": "string",
+          "description": "Issue ID"
+        },
+        "fieldID": {
+          "type": "string",
+          "description": "Entity ID associated with the issue"
+        },
+        "relationType": {
+          "type": "number",
+          "enum": [1, 3, 5, 7, 13, 20, 21, 37, 44, 46, 47, 48, 49, 50, 51, 101, 107, 108],
+          "description": "Relation type with issue",
+          "enumDescriptions": {
+            "1": "Single option",
+            "3": "Relation issue",
+            "5": "Priority",
+            "7": "Sprint it belongs to",
+            "13": "Multiple options menu",
+            "20": "Single option member",
+            "21": "Multiple options member",
+            "37": "Relation release",
+            "44": "Product it belongs to",
+            "46": "Function module it belongs to",
+            "47": "Issue Attachment",
+            "48": "Relation wiki page",
+            "49": "Relation testCase",
+            "50": "Relation execution result",
+            "51": "Relation testcase plan",
+            "101": "Watcher",
+            "107": "Multiple options project",
+            "108": "Multiple options department"
+          }
+        },
+        "origins": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EntityRef"
+          },
+          "description": "Entity information of the original association"
+        },
+        "additions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EntityRef"
+          },
+          "description": "Entity information of the newly added association"
+        },
+        "deletions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EntityRef"
+          },
+          "description": "Entity information of the deleted association"
+        }
+      }
+    }
+  }
+}

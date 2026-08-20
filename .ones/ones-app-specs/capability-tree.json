@@ -1,0 +1,192 @@
+{
+  "package": "ones-app-specs",
+  "generatedAt": "2026-08-13T07:05:14.914Z",
+  "hash": "9712346acec20b9ff308261976ad7669fd10fa46",
+  "sources": {
+    "openapi": "docs/openapi/source",
+    "hostedApi": "docs/abilities/ones-hosted-api/source/storage-api/storage-api.yaml",
+    "schemas": "static/json-schemas",
+    "guide": "docs/guide"
+  },
+  "capabilities": {
+    "openapi": {
+      "specPath": "openapi-spec.yaml",
+      "pathCount": 86,
+      "operationCount": 118,
+      "tagCount": 32
+    },
+    "hostedApi": {
+      "specPath": "hosted-api/storage-api.yaml",
+      "pathCount": 8,
+      "operationCount": 9,
+      "tags": [
+        "HostedToken",
+        "HostedStorageEntity",
+        "HostedStorageObject"
+      ]
+    },
+    "schemas": {
+      "appManifest": {
+        "path": "schemas/app_manifest_schema.json",
+        "aliasOf": "schemas/app_schema.json"
+      },
+      "appOpkx": {
+        "path": "schemas/app_opkx_schema.json",
+        "includes": "schemas/app_manifest_schema.json"
+      },
+      "events": [
+        "schemas/events/approval-status-changed-schema.json",
+        "schemas/events/department-created-or-updated-schema.json",
+        "schemas/events/department-deleted-schema.json",
+        "schemas/events/issue-created-schema.json",
+        "schemas/events/issue-field-created-schema.json",
+        "schemas/events/issue-field-deleted-schema.json",
+        "schemas/events/issue-field-updated-schema.json",
+        "schemas/events/issue-layout-updated-schema.json",
+        "schemas/events/issue-status-changed-schema.json",
+        "schemas/events/issue-updated-schema.json",
+        "schemas/events/milestone-created-schema.json",
+        "schemas/events/milestone-deleted-schema.json",
+        "schemas/events/milestone-updated-schema.json",
+        "schemas/events/project-created-schema.json",
+        "schemas/events/project-field-added-schema.json",
+        "schemas/events/project-field-created-schema.json",
+        "schemas/events/project-field-deleted-schema.json",
+        "schemas/events/project-field-removed-schema.json",
+        "schemas/events/project-field-updated-schema.json",
+        "schemas/events/project-member-added-schema.json",
+        "schemas/events/project-member-deleted-schema.json",
+        "schemas/events/project-role-added-schema.json",
+        "schemas/events/project-role-deleted-schema.json",
+        "schemas/events/project-updated-schema.json",
+        "schemas/events/sprint-created-schema.json",
+        "schemas/events/sprint-deleted-schema.json",
+        "schemas/events/sprint-field-created-schema.json",
+        "schemas/events/sprint-field-deleted-schema.json",
+        "schemas/events/sprint-field-updated-schema.json",
+        "schemas/events/sprint-sprint-stage-updated-schema.json",
+        "schemas/events/sprint-stage-changed-schema.json",
+        "schemas/events/sprint-stage-created-schema.json",
+        "schemas/events/sprint-stage-deleted-schema.json",
+        "schemas/events/sprint-stage-updated-schema.json",
+        "schemas/events/sprint-updated-schema.json",
+        "schemas/events/user-department-membership-schema.json",
+        "schemas/events/wiki-page-schema.json"
+      ],
+      "extensions": [
+        "schemas/extensions/account-thirdparty/auth-login-info-request.json",
+        "schemas/extensions/account-thirdparty/auth-login-info-response.json",
+        "schemas/extensions/account-thirdparty/custom-login-url-request.json",
+        "schemas/extensions/account-thirdparty/custom-login-url-response.json",
+        "schemas/extensions/account-thirdparty/directory-sync-request.json",
+        "schemas/extensions/account-thirdparty/directory-sync-response.json",
+        "schemas/extensions/account-thirdparty/help-info-request.json",
+        "schemas/extensions/account-thirdparty/help-info-response.json",
+        "schemas/extensions/account-thirdparty/message-notify-request.json",
+        "schemas/extensions/account-thirdparty/message-notify-response.json",
+        "schemas/extensions/app-setting-pages-request.json",
+        "schemas/extensions/app-setting-pages-response.json",
+        "schemas/extensions/manhour-validator-request.json",
+        "schemas/extensions/manhour-validator-response.json"
+      ]
+    },
+    "guide": {
+      "indexPath": "guide/guide-index.json",
+      "docCount": 13,
+      "assetCount": 5,
+      "docs": [
+        {
+          "id": "getting-started",
+          "title": "Getting Started",
+          "path": "guide/getting-started/getting-started.mdx",
+          "section": "getting-started",
+          "category": "Getting Started"
+        },
+        {
+          "id": "app-oauth",
+          "title": "Access Open API",
+          "path": "guide/getting-started/access-openapi.mdx",
+          "section": "getting-started",
+          "category": "Getting Started"
+        },
+        {
+          "id": "app-events",
+          "title": "Subscribe to Events",
+          "path": "guide/getting-started/subscribe-to-events.mdx",
+          "section": "getting-started",
+          "category": "Getting Started"
+        },
+        {
+          "id": "app-extensions",
+          "title": "Use Extensions",
+          "path": "guide/getting-started/use-extensions.mdx",
+          "section": "getting-started",
+          "category": "Getting Started"
+        },
+        {
+          "id": "app-websdk",
+          "title": "Use Web SDK",
+          "path": "guide/getting-started/use-websdk.mdx",
+          "section": "getting-started",
+          "category": "Getting Started"
+        },
+        {
+          "id": "advanced/advanced",
+          "title": "Advanced Guide",
+          "path": "guide/advanced/advanced.mdx",
+          "section": "advanced",
+          "category": "Advanced Guide"
+        },
+        {
+          "id": "app-lifecycle",
+          "title": "App Lifecycle",
+          "path": "guide/advanced/app-lifecycle.mdx",
+          "section": "advanced",
+          "category": "Advanced Guide"
+        },
+        {
+          "id": "app-security",
+          "title": "App Security",
+          "path": "guide/advanced/app-security.mdx",
+          "section": "advanced",
+          "category": "Advanced Guide"
+        },
+        {
+          "id": "ones-hosted-app",
+          "title": "ONES Hosted App",
+          "path": "guide/advanced/ones-hosted-app/ones-hosted-app.mdx",
+          "section": "advanced",
+          "category": "ONES Hosted"
+        },
+        {
+          "id": "manifest",
+          "title": "Hosted App Manifest",
+          "path": "guide/advanced/ones-hosted-app/manifest.mdx",
+          "section": "advanced",
+          "category": "ONES Hosted"
+        },
+        {
+          "id": "storage",
+          "title": "Hosted App Storage",
+          "path": "guide/advanced/ones-hosted-app/storage.mdx",
+          "section": "advanced",
+          "category": "ONES Hosted"
+        },
+        {
+          "id": "externally-hosted-app",
+          "title": "Externally Hosted App",
+          "path": "guide/advanced/externally-hosted-app/externally-hosted-app.mdx",
+          "section": "advanced",
+          "category": "Externally Hosted"
+        },
+        {
+          "id": "externally-hosted-app-local-development",
+          "title": "Externally Hosted App: Local Development",
+          "path": "guide/advanced/externally-hosted-app/externally-app-local-development.mdx",
+          "section": "advanced",
+          "category": "Externally Hosted"
+        }
+      ]
+    }
+  }
+}

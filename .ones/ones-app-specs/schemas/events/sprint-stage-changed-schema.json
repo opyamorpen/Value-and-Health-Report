@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Change Sprint Stage Event Schema",
+  "description": "Change sprint stage event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:project:sprint-stage:changed"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["sprintID", "projectID", "fromStage", "toStage"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "sprintID": {
+          "type": "string",
+          "description": "ID of the sprint with the event."
+        },
+        "projectID": {
+          "type": "string",
+          "description": "ID of the project associated with the event."
+        },
+        "fromStage": {
+          "$ref": "#/definitions/Stage",
+          "description": "Original sprint stage."
+        },
+        "toStage": {
+          "$ref": "#/definitions/Stage",
+          "description": "New sprint stage."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Stage": {
+      "type": "object",
+      "required": [
+        "id",
+        "category",
+        "planStartTime",
+        "planEndTime",
+        "actualStartTime",
+        "actualEndTime"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "ID of the stage."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the stage."
+        },
+        "planStartTime": {
+          "type": "number",
+          "description": "Planned start time of the stage."
+        },
+        "planEndTime": {
+          "type": "number",
+          "description": "Planned end time of the stage."
+        },
+        "actualStartTime": {
+          "type": "number",
+          "description": "Actual start time of the stage."
+        },
+        "actualEndTime": {
+          "type": "number",
+          "description": "Actual end time of the stage."
+        }
+      }
+    }
+  }
+}

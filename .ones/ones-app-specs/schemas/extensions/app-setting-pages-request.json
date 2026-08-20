@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ones.com/schemas/extensions/app-setting-pages-request.json",
+  "title": "App Setting Pages Custom Entries Request",
+  "description": "Request schema for app setting pages custom entries endpoint",
+  "type": "object",
+  "properties": {
+    "user_uuid": {
+      "type": "string",
+      "description": "User UUID",
+      "minLength": 1
+    },
+    "language": {
+      "type": "string",
+      "description": "User language preference (e.g., 'en', 'zh')",
+      "minLength": 1,
+      "examples": ["en", "zh", "zh-CN", "zh-TW"]
+    },
+    "timezone": {
+      "type": "string",
+      "description": "User timezone (e.g., 'Asia/Shanghai', 'UTC')",
+      "minLength": 1,
+      "examples": ["Asia/Shanghai", "UTC", "America/New_York", "Europe/London"]
+    }
+  },
+  "required": ["user_uuid", "language", "timezone"],
+  "additionalProperties": false
+}

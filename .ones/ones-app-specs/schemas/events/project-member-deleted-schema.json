@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/2020-12/schema#",
+  "title": "Delete Project Member Event Schema",
+  "description": "Delete project member event structure",
+  "type": "object",
+  "required": ["eventID", "eventType", "timestamp", "subscriberID", "eventData"],
+  "properties": {
+    "eventID": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["ones:project:project-member:deleted"],
+      "description": "Type of the event"
+    },
+    "timestamp": {
+      "type": "number",
+      "description": "Timestamp when the event occurred"
+    },
+    "subscriberID": {
+      "type": "string",
+      "description": "ID of the subscriber"
+    },
+    "eventData": {
+      "type": "object",
+      "required": ["projectID", "roleID", "members"],
+      "properties": {
+        "organizationID": {
+          "type": "string",
+          "description": "Organization that triggered the event. May be empty."
+        },
+        "teamID": {
+          "type": "string",
+          "description": "Team that triggered the event. May be empty."
+        },
+        "triggerUserID": {
+          "type": "string",
+          "description": "User that triggered the event. May be empty."
+        },
+        "projectID": {
+          "type": "string",
+          "description": "ID of the project associated with the event."
+        },
+        "roleID": {
+          "type": "string",
+          "description": "ID of a project role."
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Member"
+          },
+          "description": "List of members deleted from the project."
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Member": {
+      "type": "object",
+      "required": ["memberID"],
+      "properties": {
+        "memberID": {
+          "type": "string",
+          "description": "ID of a project member."
+        }
+      }
+    }
+  }
+}
