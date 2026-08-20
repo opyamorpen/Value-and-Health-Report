@@ -2,9 +2,15 @@ import { Module } from '@nestjs/common'
 import { ServeStaticModule } from '@nestjs/serve-static'
 import { AppController } from './app.controller'
 import { ProbeController } from './probe.controller'
+import { ReportsApiController } from './reports.controller'
 import { LifecycleService } from './services/lifecycle.service'
 import { OpenApiTokenService } from './services/openapi-token.service'
 import { OpenApiClientService } from './services/openapi-client.service'
+import { CollectorsService } from './services/collectors.service'
+import { MetricsService } from './services/metrics.service'
+import { JobsService } from './services/jobs.service'
+import { ReportsService } from './services/reports.service'
+import { AuditService } from './services/audit.service'
 import { WebProxyMiddleware } from './proxy'
 import { getPublicPath, createPublicURL, getWebPath, createWebURL, isProd } from './utils'
 import type { MiddlewareConsumer } from '@nestjs/common'
@@ -26,8 +32,17 @@ if (isProd()) {
 }
 @Module({
   imports,
-  controllers: [AppController, ProbeController],
-  providers: [LifecycleService, OpenApiTokenService, OpenApiClientService],
+  controllers: [AppController, ProbeController, ReportsApiController],
+  providers: [
+    LifecycleService,
+    OpenApiTokenService,
+    OpenApiClientService,
+    CollectorsService,
+    MetricsService,
+    JobsService,
+    ReportsService,
+    AuditService,
+  ],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
