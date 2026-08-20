@@ -1,0 +1,131 @@
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+body {
+  font-family: "Avenir Next", "Segoe UI", Arial, sans-serif;
+  margin: 0;
+  background: #f5f8ff;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.page {
+  background: linear-gradient(175deg, #2a63f6 0%, #77a2ff 55%, #f5f8ff 100%);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12px 14px 16px;
+  box-sizing: border-box;
+  min-height: 100%;
+  max-height: 100%;
+  overflow: scroll;
+  width: 100%;
+}
+.card {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(18, 34, 102, 0.15);
+  border-radius: 16px;
+  padding: 24px;
+  width: min(760px, 100%);
+  box-shadow: 0 14px 34px rgba(12, 26, 84, 0.28);
+}
+.greeting {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #0a1f56;
+}
+.subtitle {
+  margin: 8px 0 18px;
+  color: #1d3a8a;
+  font-size: 14px;
+}
+.userInfo {
+  margin: 8px 0 0;
+  color: #1e3a8a;
+  font-size: 13px;
+  font-weight: 600;
+}
+.teamInfo {
+  margin: 8px 0 0;
+  color: #1e3a8a;
+  font-size: 13px;
+  font-weight: 600;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+label {
+  color: #1f2937;
+  font-size: 13px;
+  font-weight: 600;
+}
+select {
+  border: 1px solid #b6c6f8;
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: #0f255f;
+  background: #ffffff;
+}
+.filterTag {
+  border: 1px solid #c2d2ff;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: #173b92;
+  background: #eef3ff;
+}
+.tableWrap {
+  border: 1px solid #d4dfff;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #ffffff;
+}
+.itemsTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.itemsTable th {
+  text-align: left;
+  font-size: 12px;
+  color: #26438d;
+  font-weight: 700;
+  padding: 8px 10px;
+  background: #edf3ff;
+  border-bottom: 1px solid #dbe5ff;
+}
+.itemsTable td {
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #233257;
+  border-bottom: 1px solid #edf2ff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.itemsTable tbody tr:last-child td {
+  border-bottom: none;
+}
+.itemsTable .nameCell {
+  font-weight: 600;
+}
+.itemsTable .idCell {
+  color: #3a4a70;
+}
+.empty {
+  margin-top: 10px;
+  color: #475569;
+  font-style: italic;
+}

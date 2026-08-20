@@ -1,0 +1,11 @@
+.husky/
+dist/
+node_modules/
+*.png
+*.svg
+.gitignore
+.npmrc
+.prettierignore
+.eslintignore
+LICENSE
+package*.json
