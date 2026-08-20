@@ -1,0 +1,17 @@
+# 凭据与敏感信息（严禁提交，仓库为公开仓库）
+TEST_ENVIRONMENT.md
+.env
+.env.*
+
+# 依赖与构建产物
+node_modules/
+dist/
+build/
+coverage/
+*.opkx
+*.log
+
+# 编辑器与系统文件
+.DS_Store
+.idea/
+.vscode/
