@@ -1,0 +1,17 @@
+{
+  "greeting": "Hello, ONES!",
+  "subtitle": "Showing recently created work items under current filter",
+  "teamLabel": "Current Team",
+  "limitLabel": "Show",
+  "filterLabel": "Current filter: latest {limit} items",
+  "nameLabel": "Name",
+  "createTimeLabel": "Create Time",
+  "loading": "Loading...",
+  "empty": "No work items yet.",
+  "error": "Failed to load recent work items.",
+  "unknownTeam": "Unknown Team",
+  "idLabel": "ID",
+  "untitled": "(untitled)",
+  "userLabel": "Current User",
+  "unknownUser": "Unknown User"
+}

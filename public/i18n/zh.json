@@ -1,0 +1,17 @@
+{
+  "greeting": "你好，ONES！",
+  "subtitle": "下面展示当前筛选的最近创建工作项",
+  "teamLabel": "当前团队",
+  "limitLabel": "显示条数",
+  "filterLabel": "当前筛选：最近创建 {limit} 条",
+  "nameLabel": "名称",
+  "createTimeLabel": "创建时间",
+  "loading": "加载中...",
+  "empty": "暂无工作项",
+  "error": "加载最近工作项失败",
+  "unknownTeam": "未知团队",
+  "idLabel": "ID",
+  "untitled": "（未命名）",
+  "userLabel": "当前用户",
+  "unknownUser": "未知用户"
+}

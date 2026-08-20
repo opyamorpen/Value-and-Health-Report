@@ -1,0 +1,104 @@
+{
+  "app": {
+    "id": "app_09b374c462ec4d64",
+    "name": "customer-value-health",
+    "version": "v0.0.1",
+    "desc": "ONES 客户价值与应用健康度报告：按周期生成不可变报告快照，产出客户价值报告、应用健康度报告、增购机会建议和客户版 PDF。",
+    "logo": "/public/logo.svg",
+    "auth": {
+      "type": "jwt"
+    },
+    "lifecycle_callback": {
+      "install": "/install_cb",
+      "enabled": "/enabled_cb",
+      "disabled": "/disabled_cb",
+      "uninstalled": "/uninstalled_cb"
+    },
+    "oauth": {
+      "scope": [
+        "read:account:teams",
+        "read:account:user",
+        "read:project:project",
+        "read:project:sprint",
+        "read:project:issue",
+        "read:project:issueField",
+        "read:project:issue-comment",
+        "read:project:issue-timeSpent",
+        "read:project:workLog-timeEstimated",
+        "read:wiki:space",
+        "read:wiki:page",
+        "read:testcase:library",
+        "read:license:app"
+      ],
+      "type": [
+        "app"
+      ]
+    },
+    "extensions": {
+      "appSettingPages": [
+        {
+          "key": "report_entries",
+          "funcs": {
+            "customEntries": "/app_setting_entries"
+          }
+        }
+      ]
+    }
+  },
+  "ones": {
+    "storage": {
+      "entities": [
+        {
+          "name": "installation_info",
+          "attributes": {
+            "installation_id": {
+              "type": "string",
+              "length": 128,
+              "required": true
+            },
+            "shared_secret": {
+              "type": "string",
+              "length": 512,
+              "required": true
+            },
+            "ones_base_url": {
+              "type": "string",
+              "length": 256,
+              "required": true
+            },
+            "status": {
+              "type": "string",
+              "length": 32,
+              "required": true
+            },
+            "time_stamp": {
+              "type": "integer",
+              "required": true
+            },
+            "updated_at": {
+              "type": "integer",
+              "required": true
+            }
+          },
+          "indexes": [
+            {
+              "name": "idx_installation_updated",
+              "range_attribute": "updated_at"
+            }
+          ]
+        }
+      ],
+      "object": true
+    }
+  },
+  "runtime": {
+    "type": "ones-node-22",
+    "healthcheck": {
+      "path": "/health_check"
+    },
+    "command": [
+      "node",
+      "dist/backend/index.js"
+    ]
+  }
+}
