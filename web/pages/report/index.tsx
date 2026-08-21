@@ -101,8 +101,9 @@ const ReportPage = () => {
       try {
         const [team, user] = await Promise.all([ONES.getTeamInfo(), ONES.getUserInfo()])
         setTeamUuid((team as { teamUUID?: string }).teamUUID ?? '')
-        setUserUuid((user as { userUUID?: string }).userUUID ?? '')
+        setUserUuid((user as { uuid?: string }).uuid ?? (user as { userUUID?: string }).userUUID ?? '')
       } catch (error) {
+        console.error('[report] init failed:', error)
         setMessage(`上下文获取失败: ${String((error as Error).message)}`)
       }
     }
@@ -112,9 +113,11 @@ const ReportPage = () => {
     }
   }, [])
 
-  const loadSnapshots = useCallback(async (team: string) => {
-    if (!team) return
-    const resp = await ONES.fetchApp(`/api/snapshots?teamID=${encodeURIComponent(team)}`)
+  const loadSnapshots = useCallback(async (team: string, user: string) => {
+    if (!team || !user) return
+    const resp = await ONES.fetchApp(
+      `/api/snapshots?teamID=${encodeURIComponent(team)}&userID=${encodeURIComponent(user)}`,
+    )
     if (resp.ok) {
       const data = (await resp.json()) as { snapshots?: typeof snapshots }
       setSnapshots(data.snapshots ?? [])
@@ -122,20 +125,20 @@ const ReportPage = () => {
   }, [])
 
   useEffect(() => {
-    if (teamUuid) void loadSnapshots(teamUuid)
-  }, [teamUuid, loadSnapshots])
+    if (teamUuid && userUuid) void loadSnapshots(teamUuid, userUuid)
+  }, [teamUuid, userUuid, loadSnapshots])
 
   // 轮询任务进度
   useEffect(() => {
     if (!job || (job.status !== 'pending' && job.status !== 'running')) return
     const timer = setInterval(async () => {
       try {
-        const resp = await ONES.fetchApp(`/api/report-jobs/${job.jobId}`)
+        const resp = await ONES.fetchApp(`/api/report-jobs/${job.jobId}?teamID=${encodeURIComponent(teamUuid)}&userID=${encodeURIComponent(userUuid)}`)
         if (!resp.ok) return
         const data = (await resp.json()) as { job?: JobState }
         if (data.job) setJob(data.job)
         if (data.job && (data.job.status === 'succeeded' || data.job.status === 'partial') && data.job.snapshotKey) {
-          const snapResp = await ONES.fetchApp(`/api/reports/${data.job.snapshotKey}`)
+          const snapResp = await ONES.fetchApp(`/api/reports/${data.job.snapshotKey}?teamID=${encodeURIComponent(teamUuid)}&userID=${encodeURIComponent(userUuid)}`)
           if (snapResp.ok) {
             const snapData = (await snapResp.json()) as { report?: ReportData }
             if (snapData.report) {
@@ -145,7 +148,7 @@ const ReportPage = () => {
               setHealth(normalized.health)
             }
           }
-          void loadSnapshots(teamUuid)
+          void loadSnapshots(teamUuid, userUuid)
         }
       } catch {
         // 轮询失败忽略，下次重试
@@ -153,7 +156,7 @@ const ReportPage = () => {
     }, 2000)
     pollRef.current = timer
     return () => clearInterval(timer)
-  }, [job, teamUuid, loadSnapshots])
+  }, [job, teamUuid, userUuid, loadSnapshots])
 
   const createJob = async () => {
     setMessage('')
@@ -176,7 +179,7 @@ const ReportPage = () => {
   }
 
   const openSnapshot = async (snapshotId: string) => {
-    const resp = await ONES.fetchApp(`/api/reports/${snapshotId}`)
+    const resp = await ONES.fetchApp(`/api/reports/${snapshotId}?teamID=${encodeURIComponent(teamUuid)}&userID=${encodeURIComponent(userUuid)}`)
     if (resp.ok) {
       const data = (await resp.json()) as { report?: ReportData }
       if (data.report) {
@@ -190,7 +193,7 @@ const ReportPage = () => {
 
   const saveNarrative = async () => {
     if (!report) return
-    const resp = await ONES.fetchApp(`/api/reports/${report.snapshotId}/narrative`, {
+    const resp = await ONES.fetchApp(`/api/reports/${report.snapshotId}/narrative?teamID=${encodeURIComponent(teamUuid)}&userID=${encodeURIComponent(userUuid)}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userID: userUuid, narrative: { ...report.narrative, summary: narrativeDraft } }),
@@ -204,7 +207,7 @@ const ReportPage = () => {
     setExporting(true)
     setMessage('')
     try {
-      const resp = await ONES.fetchApp(`/api/reports/${report.snapshotId}/exports`, {
+      const resp = await ONES.fetchApp(`/api/reports/${report.snapshotId}/exports?teamID=${encodeURIComponent(teamUuid)}&userID=${encodeURIComponent(userUuid)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userID: userUuid, sections }),
