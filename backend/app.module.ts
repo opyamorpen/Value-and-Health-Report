@@ -13,6 +13,7 @@ import { ReportsService } from './services/reports.service'
 import { AuditService } from './services/audit.service'
 import { PdfService } from './services/pdf.service'
 import { DetectorsService } from './services/detectors.service'
+import { WhitelistGuard, WhitelistService } from './services/whitelist.service'
 import { WebProxyMiddleware } from './proxy'
 import { getPublicPath, createPublicURL, getWebPath, createWebURL, isProd } from './utils'
 import type { MiddlewareConsumer } from '@nestjs/common'
@@ -46,6 +47,8 @@ if (isProd()) {
     AuditService,
     PdfService,
     DetectorsService,
+    WhitelistService,
+    WhitelistGuard,
   ],
 })
 export class AppModule {

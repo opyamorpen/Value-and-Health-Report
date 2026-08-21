@@ -378,6 +378,44 @@
               ]
             }
           ]
+        },
+        {
+          "name": "permission_whitelist",
+          "attributes": {
+            "team_uuid": {
+              "type": "string",
+              "length": 32,
+              "required": true
+            },
+            "user_uuid": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "role": {
+              "type": "string",
+              "length": 32,
+              "required": true
+            },
+            "added_by": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "created_at": {
+              "type": "integer",
+              "required": true
+            }
+          },
+          "indexes": [
+            {
+              "name": "idx_whitelist_created",
+              "range_attribute": "created_at",
+              "partition": [
+                "team_uuid"
+              ]
+            }
+          ]
         }
       ],
       "object": true

@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Res } from '@nestjs/common'
+import { Body, Controller, Get, Param, Patch, Post, Query, Res, UseGuards, Put, Delete } from '@nestjs/common'
 import type { Response } from 'express'
 import { JobsService } from './services/jobs.service'
 import { ReportsService } from './services/reports.service'
 import { AuditService } from './services/audit.service'
+import { WhitelistGuard, WhitelistService } from './services/whitelist.service'
 import { PdfService } from './services/pdf.service'
 import type { Period } from './types'
 
@@ -14,13 +15,70 @@ import type { Period } from './types'
  * 身份：M3 骨架阶段从 query 传入团队（与 ONES.getTeamInfo 对齐），白名单鉴权随后引入。
  */
 @Controller('api')
+@UseGuards(WhitelistGuard)
 export class ReportsApiController {
   constructor(
     private readonly jobs: JobsService,
     private readonly reports: ReportsService,
     private readonly audit: AuditService,
     private readonly pdf: PdfService,
+    private readonly whitelist: WhitelistService,
   ) {}
+
+  /** 白名单管理（仅白名单内 admin 角色可操作） */
+  @Get('whitelist')
+  async listWhitelist(@Query('teamID') teamUuid: string, @Query('userID') userUuid: string, @Res({ passthrough: true }) res: Response) {
+    if (!(await this.isAdmin(teamUuid, userUuid))) {
+      res.status(403)
+      return { ok: false, error: '仅白名单管理员可查看' }
+    }
+    return { ok: true, whitelist: await this.whitelist.list(teamUuid) }
+  }
+
+  @Put('whitelist')
+  async addWhitelist(
+    @Body() body: { teamID: string; userID: string; targetUserID: string; role?: string },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    if (!(await this.isAdmin(body.teamID, body.userID))) {
+      res.status(403)
+      return { ok: false, error: '仅白名单管理员可修改' }
+    }
+    if (!body.targetUserID) {
+      res.status(400)
+      return { ok: false, error: 'targetUserID required' }
+    }
+    try {
+      await this.whitelist.add(body.teamID, body.targetUserID, body.role || 'member', body.userID)
+      await this.audit.record(body.teamID, body.userID, 'whitelist_updated', 'permission_whitelist', body.targetUserID, { action: 'add' })
+      return { ok: true }
+    } catch (error) {
+      res.status(400)
+      return { ok: false, error: String((error as Error).message).slice(0, 150) }
+    }
+  }
+
+  @Delete('whitelist')
+  async removeWhitelist(
+    @Query('teamID') teamUuid: string,
+    @Query('userID') userUuid: string,
+    @Query('targetUserID') targetUserID: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    if (!(await this.isAdmin(teamUuid, userUuid))) {
+      res.status(403)
+      return { ok: false, error: '仅白名单管理员可修改' }
+    }
+    await this.whitelist.remove(teamUuid, targetUserID)
+    await this.audit.record(teamUuid, userUuid, 'whitelist_updated', 'permission_whitelist', targetUserID, { action: 'remove' })
+    return { ok: true }
+  }
+
+  private async isAdmin(teamUuid: string, userUuid: string): Promise<boolean> {
+    const list = await this.whitelist.list(teamUuid)
+    const self = list.find(w => w.userUuid === userUuid)
+    return self?.role === 'admin'
+  }
 
   /** 创建报告任务：当前团队 + 日期范围（默认近 90 天 vs 前 90 天） */
   @Post('report-jobs')
