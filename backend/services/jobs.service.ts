@@ -141,6 +141,7 @@ export class JobsService {
           periodStart: job.period.start,
           periodEnd: job.period.end,
         })
+        this.logger.log(`healthMatrix: ${detectorResults.length} dimensions, ${detectorResults.filter(r => r.maturity === '无法核验').length} unverifiable`)
         healthMatrix = {
           results: detectorResults.map(r => ({
             dimension: r.dimension,
