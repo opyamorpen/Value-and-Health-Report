@@ -35,11 +35,16 @@ type ReportData = {
   createdAt: number
 }
 
-/** 后端 metrics_json 兼容两种结构：旧平铺 / 新 {value, health} */
-const normalizeReport = (report: ReportData): { report: ReportData; health: HealthMatrix | null } => {
+/** 后端 metrics_json 兼容三种结构：旧平铺 / 新 {value, health} / v0.2 四轴（report 页只渲染旧结构数据，v0.2 请用 v017_value 页） */
+const normalizeReport = (report: ReportData): { report: ReportData | null; health: HealthMatrix | null } => {
   const metrics = report.metrics as unknown as Partial<ValueMetrics> & { value?: ValueMetrics; health?: HealthMatrix }
   if (metrics.value) {
-    return { report: { ...report, metrics: metrics.value }, health: metrics.health ?? null }
+    const inner = metrics.value
+    // v0.2 结构无 issues/projects 平铺字段 → 本页不渲染价值指标，仅保留叙事与健康度
+    if ('scope' in inner && 'highlights' in inner) {
+      return { report: { ...report, metrics: undefined as unknown as ValueMetrics }, health: metrics.health ?? null }
+    }
+    return { report: { ...report, metrics: inner }, health: metrics.health ?? null }
   }
   return { report, health: null }
 }
@@ -231,9 +236,10 @@ const ReportPage = () => {
   }
 
   const busy = job?.status === 'pending' || job?.status === 'running'
+  const showLegacyMetrics = report != null && report.metrics != null && 'issues' in (report.metrics ?? {})
   const throughputMax = useMemo(
-    () => Math.max(1, ...(report?.metrics.issues.throughputTrend ?? []).map(t => Math.max(t.created, t.completed))),
-    [report],
+    () => Math.max(1, ...(showLegacyMetrics ? report?.metrics.issues.throughputTrend ?? [] : []).map(t => Math.max(t.created, t.completed))),
+    [report, showLegacyMetrics],
   )
 
   return (
@@ -286,6 +292,11 @@ const ReportPage = () => {
             </button>
           </section>
 
+          {!showLegacyMetrics && (
+            <p className="legacy-note">此快照由新规则版本生成，价值指标请使用「客户价值呈现」tab 查看。</p>
+          )}
+
+          {showLegacyMetrics && (
           <section className="metrics-grid">
             <MetricCard title="项目" status={report.metrics.projects.status}>
               <KV label="新建项目" value={report.metrics.projects.newProjects} />
@@ -323,8 +334,9 @@ const ReportPage = () => {
               <KV label="按期率" value={report.metrics.planFulfillment.rate != null ? `${Math.round(report.metrics.planFulfillment.rate * 100)}%` : '样本不足'} />
             </MetricCard>
           </section>
+          )}
 
-          {report.metrics.issues.throughputTrend.length > 0 && (
+          {showLegacyMetrics && report.metrics.issues.throughputTrend.length > 0 && (
             <section className="chart">
               <h2>吞吐量趋势</h2>
               <div className="trend-chart">

@@ -18,3 +18,4 @@ coverage/
 .zcode/
 web-build/
 .vite/
+tsconfig.vite.tsbuildinfo

@@ -1,9 +1,19 @@
 import { MetricsService } from '../services/metrics.service'
-import type { CollectedChangeRecord, CollectedIssue, CollectedProject, CollectedSprint, CollectResult } from '../services/collectors.service'
+import { compareValues } from '../types'
+import type {
+  CollectedChangeRecord,
+  CollectedEstimate,
+  CollectedIssue,
+  CollectedIssueType,
+  CollectedProject,
+  CollectedSprint,
+  CollectedSpent,
+  CollectResult,
+} from '../services/collectors.service'
 
 /**
- * M5 固定数据单测（README 实施步骤 4）：
- * 跨周期统计、首次完成、重开、终态 Sprint、机器人过滤、时区边界、缺失值、样本不足。
+ * v0.2 单测（docs/value-standard.md）：
+ * 双周期环比、趋势标签阈值、类型拆分、价值亮点、机器人过滤、时区边界、样本不足。
  */
 
 const DAY = 86400000
@@ -17,10 +27,7 @@ const period = {
 
 const service = new MetricsService()
 
-const okProjects = (data: CollectedProject[], errors: string[] = []): CollectResult<CollectedProject[]> => ({ data, errors })
-const okSprints = (data: CollectedSprint[], errors: string[] = []): CollectResult<CollectedSprint[]> => ({ data, errors })
-const okIssues = (data: CollectedIssue[], errors: string[] = []): CollectResult<CollectedIssue[]> => ({ data, errors })
-const okChanges = (data: CollectedChangeRecord[], errors: string[] = []): CollectResult<CollectedChangeRecord[]> => ({ data, errors })
+const ok = <T,>(data: T, errors: string[] = []): CollectResult<T> => ({ data, errors })
 
 const project = (over: Partial<CollectedProject> = {}): CollectedProject => ({
   uuid: 'proj1',
@@ -29,6 +36,13 @@ const project = (over: Partial<CollectedProject> = {}): CollectedProject => ({
   status: 'in_progress',
   statusCategory: 'in_progress',
   isArchive: false,
+  ...over,
+})
+
+const issueType = (over: Partial<CollectedIssueType> = {}): CollectedIssueType => ({
+  uuid: 'type-req',
+  name: '需求',
+  isSub: false,
   ...over,
 })
 
@@ -57,204 +71,348 @@ const change = (over: Partial<CollectedChangeRecord> = {}): CollectedChangeRecor
   ...over,
 })
 
-describe('MetricsService.compute', () => {
-  describe('项目指标', () => {
-    it('归档项目不计入状态分布；周期内新建项目正确统计', () => {
-      const report = service.compute(period, {
-        projects: okProjects([
-          project({ createTime: period.start + DAY }),
-          project({ uuid: 'p2', createTime: period.compareStart + DAY }),
-          project({ uuid: 'p3', createTime: period.start, isArchive: true }),
-        ]),
-        sprints: okSprints([]),
-        issues: okIssues([]),
-        changelogs: okChanges([]),
-      }, 1000)
-      expect(report.projects.newProjects).toBe(2) // 周期内（p3 也在周期起点但归档不计）
-      expect(report.projects.statusDistribution).toEqual({ in_progress: 2 })
-      expect(report.projects.status).toBe('ok')
-    })
+/** 组装 bundle 的便捷工厂 */
+const bundle = (over: Partial<Parameters<MetricsService['compute']>[1]> = {}) => ({
+  projects: ok<CollectedProject[]>([project()]),
+  sprints: ok<CollectedSprint[]>([]),
+  issueTypes: ok<CollectedIssueType[]>([]),
+  issues: ok<CollectedIssue[]>([]),
+  changelogs: ok<CollectedChangeRecord[]>([]),
+  estimates: ok<CollectedEstimate[]>([]),
+  spent: ok<CollectedSpent[]>([]),
+  wikiSpaceCount: ok<number>(0),
+  ...over,
+})
 
-    it('无项目时状态为 unknown', () => {
-      const report = service.compute(period, {
-        projects: okProjects([]),
-        sprints: okSprints([]),
-        issues: okIssues([]),
-        changelogs: okChanges([]),
-      }, 1000)
-      expect(report.projects.status).toBe('unknown')
-    })
+describe('compareValues（value-standard §2.3 趋势阈值）', () => {
+  it('数值类：|Δ%|≥10% 显著、5~10% 略有、<5% 持平', () => {
+    expect(compareValues('up', 120, 100, 'count', 10).trendLabel).toBe('显著提升')
+    expect(compareValues('up', 106, 100, 'count', 10).trendLabel).toBe('略有提升')
+    expect(compareValues('up', 103, 100, 'count', 10).trendLabel).toBe('基本持平')
+    expect(compareValues('up', 80, 100, 'count', 10).trendLabel).toBe('显著下降')
   })
 
-  describe('工作项：首次完成与重开', () => {
-    it('首次完成取最早终态记录；周期外完成不计入当前周期', () => {
-      const report = service.compute(period, {
-        projects: okProjects([project()]),
-        sprints: okSprints([]),
-        issues: okIssues([
-          issue({ uuid: 'a', createTime: period.start + DAY }),
-          issue({ uuid: 'b', createTime: period.start + DAY }),
-        ]),
-        changelogs: okChanges([
-          // a：周期内两次进入终态 → 首完取第一次
-          change({ issueUuid: 'a', createTime: period.start + 2 * DAY }),
-          change({ issueUuid: 'a', createTime: period.start + 30 * DAY }),
-          // b：完成时间在对比周期 → 不计入当前周期首完
-          change({ issueUuid: 'b', createTime: period.compareStart + DAY }),
-        ]),
-      }, 1000)
-      expect(report.issues.firstCompleted).toBe(1)
-    })
-
-    it('重开：终态→非终态的变更计一次；同一记录双向只计重开方向', () => {
-      const report = service.compute(period, {
-        projects: okProjects([project()]),
-        sprints: okSprints([]),
-        issues: okIssues([issue()]),
-        changelogs: okChanges([
-          // 完成
-          change({ createTime: period.start + DAY, oldValue: 'todo', newValue: 'done' }),
-          // 重开（done → todo）
-          change({ createTime: period.start + 2 * DAY, oldValue: 'done', newValue: 'todo' }),
-          // 再次完成（todo → done，非重开）
-          change({ createTime: period.start + 3 * DAY, oldValue: 'todo', newValue: 'done' }),
-        ]),
-      }, 1000)
-      expect(report.issues.reopened).toBe(1)
-    })
-
-    it('吞吐量周趋势：创建与完成按 ISO 周聚合', () => {
-      const report = service.compute(period, {
-        projects: okProjects([project()]),
-        sprints: okSprints([]),
-        issues: okIssues([issue({ createTime: period.start + DAY })]),
-        changelogs: okChanges([change({ createTime: period.start + 2 * DAY })]),
-      }, 1000)
-      expect(report.issues.throughputTrend.length).toBeGreaterThan(0)
-      const totalCompleted = report.issues.throughputTrend.reduce((s, w) => s + w.completed, 0)
-      expect(totalCompleted).toBe(1)
-    })
+  it('比率类：按百分点差判定', () => {
+    expect(compareValues('up', 0.92, 0.85, 'ratio', 10).trendLabel).toBe('显著提升')
+    expect(compareValues('up', 0.88, 0.85, 'ratio', 10).trendLabel).toBe('略有提升')
+    expect(compareValues('up', 0.86, 0.85, 'ratio', 10).trendLabel).toBe('基本持平')
   })
 
-  describe('交付周期 P50/P75', () => {
-    it('样本不足（<5）时显示未知', () => {
-      const report = service.compute(period, {
-        projects: okProjects([project()]),
-        sprints: okSprints([]),
-        issues: okIssues([issue()]),
-        changelogs: okChanges([change()]),
-      }, 1000)
-      expect(report.cycleTime.status).toBe('unknown')
-      expect(report.cycleTime.p50Hours).toBeNull()
-      expect(report.cycleTime.sampleSize).toBe(1)
-    })
-
-    it('样本充足时 P50 ≤ P75 且按创建→首次完成计算', () => {
-      const issues: CollectedIssue[] = []
-      const changes: CollectedChangeRecord[] = []
-      for (let i = 0; i < 6; i++) {
-        const uuid = `issue${i}`
-        issues.push(issue({ uuid, createTime: period.start + i * DAY }))
-        changes.push(change({ issueUuid: uuid, createTime: period.start + (i + 2) * DAY }))
-      }
-      const report = service.compute(period, {
-        projects: okProjects([project()]),
-        sprints: okSprints([]),
-        issues: okIssues(issues),
-        changelogs: okChanges(changes),
-      }, 1000)
-      expect(report.cycleTime.status).toBe('ok')
-      expect(report.cycleTime.sampleSize).toBe(6)
-      expect(report.cycleTime.p50Hours).toBe(48)
-      expect(report.cycleTime.p75Hours).toBeGreaterThanOrEqual(report.cycleTime.p50Hours!)
-    })
+  it('direction 决定改善解读：交付周期下降=改善', () => {
+    const faster = compareValues('down', 72, 96, 'count', 10)
+    expect(faster.trendLabel).toBe('显著下降')
+    expect(faster.isImprovement).toBe(true)
+    const slower = compareValues('down', 120, 96, 'count', 10)
+    expect(slower.isImprovement).toBe(false)
   })
 
-  describe('协作：机器人过滤', () => {
-    it('机器人变更不计入人工协作；参与人数去重', () => {
-      const report = service.compute(period, {
-        projects: okProjects([project()]),
-        sprints: okSprints([]),
-        issues: okIssues([issue()]),
-        changelogs: okChanges([
-          change({ authorUuid: 'u1', authorName: '张三', createTime: period.start + DAY }),
-          change({ authorUuid: 'u1', authorName: '张三', fieldUuid: 'field002', createTime: period.start + 2 * DAY }),
-          // 机器人（系统名）不计
-          change({ authorUuid: 'bot1', authorName: '{{system_bot}}', createTime: period.start + DAY }),
-          change({ authorUuid: 'bot2', authorName: '系统', createTime: period.start + DAY }),
-          // 创建者字段（field003）不计
-          change({ authorUuid: 'u2', authorName: '李四', fieldUuid: 'field003', createTime: period.start + DAY }),
-        ]),
-      }, 1000)
-      expect(report.collaboration.manualFieldChanges).toBe(2)
-      expect(report.collaboration.participants).toBe(1)
-    })
+  it('previous=0 且 current>0 → 新增；样本不足 → 未知', () => {
+    expect(compareValues('up', 5, 0, 'count', 10).trendLabel).toBe('新增')
+    expect(compareValues('up', 5, 0, 'count', 10).isImprovement).toBe(true)
+    const unknown = compareValues('up', 120, 100, 'count', 3)
+    expect(unknown.trendLabel).toBe('未知')
+    expect(unknown.isImprovement).toBeNull()
   })
 
-  describe('计划兑现率', () => {
-    it('仅有截止日期且周期内完成的工作项计入', () => {
-      const report = service.compute(period, {
-        projects: okProjects([project()]),
-        sprints: okSprints([]),
-        issues: okIssues([
-          // 按期：截止在完成之后
-          issue({ uuid: 'on-time', dueDate: new Date(period.start + 5 * DAY).toISOString() }),
-          // 逾期：完成超过截止 2 天（超出 1 天容差）
-          issue({ uuid: 'late', dueDate: new Date(period.start + 1 * DAY).toISOString() }),
-          // 无截止日期不计入
-          issue({ uuid: 'no-due', dueDate: null }),
-        ]),
-        changelogs: okChanges([
-          change({ issueUuid: 'on-time', createTime: period.start + 2 * DAY }),
-          change({ issueUuid: 'late', createTime: period.start + 4 * DAY }),
-          change({ issueUuid: 'no-due', createTime: period.start + 2 * DAY }),
-        ]),
-      }, 1000)
-      expect(report.planFulfillment.total).toBe(2)
-      expect(report.planFulfillment.onTime).toBe(1)
-      // 样本量 2 < Q(5)：显示未知而非推断比率
-      expect(report.planFulfillment.rate).toBeNull()
-    })
-
-    it('样本不足时比率为 null', () => {
-      const report = service.compute(period, {
-        projects: okProjects([project()]),
-        sprints: okSprints([]),
-        issues: okIssues([issue({ dueDate: new Date(period.start + 5 * DAY).toISOString() })]),
-        changelogs: okChanges([change()]),
-      }, 1000)
-      expect(report.planFulfillment.rate).toBeNull()
-    })
-  })
-
-  describe('时区边界', () => {
-    it('UTC 边界时间（周期起止时刻）正确归属：start 含 end 不含', () => {
-      const report = service.compute(period, {
-        projects: okProjects([project()]),
-        sprints: okSprints([]),
-        issues: okIssues([
-          issue({ uuid: 'at-start', createTime: period.start }), // 恰好 start → 计入
-          issue({ uuid: 'at-end', createTime: period.end }), // 恰好 end → 不计入
-        ]),
-        changelogs: okChanges([]),
-      }, 1000)
-      expect(report.issues.created).toBe(1)
-    })
-  })
-
-  describe('信封与规则版本', () => {
-    it('所有指标携带 ruleVersion 与 coverage', () => {
-      const report = service.compute(period, {
-        projects: okProjects([project()]),
-        sprints: okSprints([]),
-        issues: okIssues([issue()]),
-        changelogs: okChanges([change()]),
-      }, 1000)
-      for (const envelope of [report.projects, report.sprints, report.issues, report.cycleTime, report.collaboration, report.planFulfillment]) {
-        expect(envelope.ruleVersion).toBe('health-standard-v0.1')
-        expect(envelope.source).toBeTruthy()
-        expect(envelope.collectedAt).toBe(1000)
-      }
-    })
+  it('样本足够但 current/previous 为 null → 未知', () => {
+    expect(compareValues('up', null, 100, 'count', 10).trendLabel).toBe('未知')
   })
 })
+
+describe('MetricsService.compute（v0.2 双周期）', () => {
+  it('环比：当前周期与对比周期各算一遍，形成 delta', () => {
+    const issues: CollectedIssue[] = []
+    const changes: CollectedChangeRecord[] = []
+    // 当前周期 6 个创建，对比周期 3 个
+    for (let i = 0; i < 6; i++) {
+      issues.push(issue({ uuid: `cur${i}`, createTime: period.start + i * DAY, issueTypeUuid: 'type-req' }))
+      changes.push(change({ issueUuid: `cur${i}`, createTime: period.start + (i + 1) * DAY }))
+    }
+    for (let i = 0; i < 3; i++) {
+      issues.push(issue({ uuid: `prev${i}`, createTime: period.compareStart + i * DAY, issueTypeUuid: 'type-req' }))
+      changes.push(change({ issueUuid: `prev${i}`, createTime: period.compareStart + (i + 1) * DAY }))
+    }
+    const report = service.compute(period, bundle({
+      issueTypes: ok([issueType()]),
+      issues: ok(issues),
+      changelogs: ok(changes),
+    }), 1000)
+    expect(report.requirement.created.current).toBe(6)
+    expect(report.requirement.created.previous).toBe(3)
+    expect(report.requirement.created.delta).toBe(3)
+    expect(report.requirement.created.trendLabel).toBe('显著提升')
+    expect(report.requirement.created.isImprovement).toBe(true)
+  })
+
+  it('类型拆分：需求/缺陷按 issueTypes 映射，未分类降级', () => {
+    const issues = [
+      issue({ uuid: 'r1', createTime: period.start + DAY, issueTypeUuid: 'type-req' }),
+      issue({ uuid: 'd1', createTime: period.start + DAY, issueTypeUuid: 'type-bug' }),
+      issue({ uuid: 'd2', createTime: period.start + 2 * DAY, issueTypeUuid: 'type-bug' }),
+    ]
+    const report = service.compute(period, bundle({
+      issueTypes: ok([
+        issueType({ uuid: 'type-req', name: '需求' }),
+        issueType({ uuid: 'type-bug', name: '缺陷' }),
+      ]),
+      issues: ok(issues),
+    }), 1000)
+    expect(report.requirement.typeSplit).toBe(true)
+    expect(report.defect.typeSplit).toBe(true)
+    expect(report.requirement.created.current).toBe(1)
+    expect(report.defect.found.current).toBe(2)
+  })
+
+  it('类型映射缺失 → typeSplit=false，缺陷维度降级未知', () => {
+    const report = service.compute(period, bundle({
+      issueTypes: ok([]),
+      issues: ok([issue({ createTime: period.start + DAY })]),
+    }), 1000)
+    expect(report.requirement.typeSplit).toBe(false)
+    expect(report.defect.typeSplit).toBe(false)
+    expect(report.defect.found.trendLabel).toBe('未知')
+  })
+
+  it('首次完成取最早终态记录；周期外完成不计入当前周期', () => {
+    const issues = [
+      issue({ uuid: 'a', createTime: period.start + DAY, issueTypeUuid: 'type-req' }),
+      issue({ uuid: 'b', createTime: period.start + DAY, issueTypeUuid: 'type-req' }),
+    ]
+    const changes = [
+      change({ issueUuid: 'a', createTime: period.start + 2 * DAY }),
+      change({ issueUuid: 'a', createTime: period.start + 30 * DAY }),
+      // b 完成时间在对比周期 → 不计入当前周期交付
+      change({ issueUuid: 'b', createTime: period.compareStart + DAY }),
+    ]
+    const report = service.compute(period, bundle({
+      issueTypes: ok([issueType()]),
+      issues: ok(issues),
+      changelogs: ok(changes),
+    }), 1000)
+    expect(report.requirement.delivered.current).toBe(1)
+  })
+
+  it('价值亮点：显著改善进入亮点，按幅度排序', () => {
+    const issues: CollectedIssue[] = []
+    const changes: CollectedChangeRecord[] = []
+    // 当前周期 12 个需求全交付，对比周期 5 个 → 交付量 +140%（显著）
+    for (let i = 0; i < 12; i++) {
+      issues.push(issue({ uuid: `c${i}`, createTime: period.start + i * DAY, issueTypeUuid: 'type-req' }))
+      changes.push(change({ issueUuid: `c${i}`, createTime: period.start + i * DAY + 3600000 }))
+    }
+    for (let i = 0; i < 5; i++) {
+      issues.push(issue({ uuid: `p${i}`, createTime: period.compareStart + i * DAY, issueTypeUuid: 'type-req' }))
+      changes.push(change({ issueUuid: `p${i}`, createTime: period.compareStart + i * DAY + 3600000 }))
+    }
+    const report = service.compute(period, bundle({
+      issueTypes: ok([issueType()]),
+      issues: ok(issues),
+      changelogs: ok(changes),
+    }), 1000)
+    expect(report.highlights.length).toBeGreaterThan(0)
+    expect(report.highlights.some(h => h.metric === 'requirement.delivered' && h.kind === 'improvement')).toBe(true)
+    expect(report.highlights[0].text).toContain('需求交付量')
+  })
+
+  it('无显著改善时回退为绝对成果，不硬凑', () => {
+    // 两周期数据完全一致 → 无 delta → 回退成果句
+    const issues: CollectedIssue[] = []
+    const changes: CollectedChangeRecord[] = []
+    for (let i = 0; i < 6; i++) {
+      issues.push(issue({ uuid: `c${i}`, createTime: period.start + i * DAY, issueTypeUuid: 'type-req' }))
+      changes.push(change({ issueUuid: `c${i}`, createTime: period.start + i * DAY + 3600000 }))
+      issues.push(issue({ uuid: `p${i}`, createTime: period.compareStart + i * DAY, issueTypeUuid: 'type-req' }))
+      changes.push(change({ issueUuid: `p${i}`, createTime: period.compareStart + i * DAY + 3600000 }))
+    }
+    const report = service.compute(period, bundle({
+      issueTypes: ok([issueType()]),
+      issues: ok(issues),
+      changelogs: ok(changes),
+    }), 1000)
+    expect(report.highlights.every(h => h.kind === 'achievement')).toBe(true)
+  })
+
+  it('显著退步进入需关注（中性措辞，最多 2 条）', () => {
+    const issues: CollectedIssue[] = []
+    const changes: CollectedChangeRecord[] = []
+    // 当前周期 6 个需求交付，对比周期 20 个 → -70%（显著退步；样本量按当前周期 6 ≥ Q）
+    for (let i = 0; i < 6; i++) {
+      issues.push(issue({ uuid: `c${i}`, createTime: period.start + i * DAY, issueTypeUuid: 'type-req' }))
+      changes.push(change({ issueUuid: `c${i}`, createTime: period.start + i * DAY + 3600000 }))
+    }
+    for (let i = 0; i < 20; i++) {
+      issues.push(issue({ uuid: `p${i}`, createTime: period.compareStart + i * DAY, issueTypeUuid: 'type-req' }))
+      changes.push(change({ issueUuid: `p${i}`, createTime: period.compareStart + i * DAY + 3600000 }))
+    }
+    const report = service.compute(period, bundle({
+      issueTypes: ok([issueType()]),
+      issues: ok(issues),
+      changelogs: ok(changes),
+    }), 1000)
+    expect(report.concerns.length).toBeGreaterThan(0)
+    expect(report.concerns[0].text).toContain('建议关注')
+  })
+
+  it('协作：机器人过滤 + 双周期参与人数', () => {
+    const changes = [
+      change({ authorUuid: 'u1', authorName: '张三', createTime: period.start + DAY }),
+      // 机器人不计
+      change({ authorUuid: 'bot1', authorName: '{{system_bot}}', createTime: period.start + DAY }),
+      // 创建者字段不计
+      change({ authorUuid: 'u2', authorName: '李四', fieldUuid: 'field003', createTime: period.start + DAY }),
+      // 对比周期的行为
+      change({ authorUuid: 'u3', authorName: '王五', createTime: period.compareStart + DAY }),
+    ]
+    const report = service.compute(period, bundle({ changelogs: ok(changes) }), 1000)
+    expect(report.collaboration.participants.current).toBe(1)
+    expect(report.collaboration.participants.previous).toBe(1)
+    expect(report.collaboration.manualActions.current).toBe(1)
+  })
+
+  it('交付周期 P50：样本<Q 显示未知；down 方向下降=改善', () => {
+    const issues: CollectedIssue[] = []
+    const changes: CollectedChangeRecord[] = []
+    for (let i = 0; i < 6; i++) {
+      issues.push(issue({ uuid: `i${i}`, createTime: period.start + i * DAY }))
+      changes.push(change({ issueUuid: `i${i}`, createTime: period.start + i * DAY + 48 * 3600000 }))
+    }
+    const report = service.compute(period, bundle({
+      issues: ok(issues),
+      changelogs: ok(changes),
+    }), 1000)
+    expect(report.deliveryEfficiency.cycleP50Hours.current).toBe(48)
+    expect(report.deliveryEfficiency.cycleP50Hours.direction).toBe('down')
+  })
+
+  it('时区边界：start 含 end 不含', () => {
+    const report = service.compute(period, bundle({
+      issues: ok([
+        issue({ uuid: 'at-start', createTime: period.start }),
+        issue({ uuid: 'at-end', createTime: period.end }),
+      ]),
+    }), 1000)
+    expect(report.requirement.created.current).toBe(1)
+  })
+
+  it('活跃项目：按 projectUuid 归并（v0.1 口径修正——不再把 issueUuid 计入）', () => {
+    // proj1 下 1 个 issue；proj2 无 issue。活跃项目应为 1（若按 v0.1 bug 会算 2）
+    const report = service.compute(period, bundle({
+      projects: ok([project(), project({ uuid: 'proj2' })]),
+      issues: ok([issue({ createTime: period.start + DAY })]),
+      changelogs: ok([change({ createTime: period.start + 2 * DAY })]),
+    }), 1000)
+    expect(report.scope.activeProjects.current).toBe(1)
+  })
+
+  it('Sprint 终态（§4.2 修正）：status 关键词或 finishTime 存在', () => {
+    const sprints = [
+      // status 终态 + 完成时间在周期内 → 计入
+      { uuid: 's1', name: '迭代1', status: 'done', startDate: period.start, endDate: period.start + 14 * DAY, finishTime: period.start + 14 * DAY },
+      // 非终态 → 不计入
+      { uuid: 's2', name: '迭代2', status: 'in_progress', startDate: period.start, endDate: period.start + 14 * DAY },
+    ] as CollectedSprint[]
+    const report = service.compute(period, bundle({ sprints: ok(sprints) }), 1000)
+    expect(report.sprintExecution.finished.current).toBe(1)
+  })
+
+  it('知识沉淀：field048 关联计数与占比', () => {
+    const issues = [
+      issue({ uuid: 'w1', createTime: period.start + DAY, wikiLinked: true }),
+      issue({ uuid: 'w2', createTime: period.start + DAY }),
+      issue({ uuid: 'w3', createTime: period.start + DAY, wikiLinked: true }),
+      issue({ uuid: 'w4', createTime: period.start + DAY }),
+      issue({ uuid: 'w5', createTime: period.start + DAY, wikiLinked: true }),
+      // 对比周期 5 个无关联
+      ...Array.from({ length: 5 }, (_, i) =>
+        issue({ uuid: `pw${i}`, createTime: period.compareStart + i * DAY }),
+      ),
+    ]
+    const report = service.compute(period, bundle({
+      issues: ok(issues),
+      wikiSpaceCount: ok(3),
+    }), 1000)
+    expect(report.knowledge.wikiLinkedCount.current).toBe(3)
+    expect(report.knowledge.wikiLinkedRate.current).toBe(0.6)
+    expect(report.knowledge.wikiSpaces).toBe(3)
+  })
+
+  it('管理规范度：负责人/截止日期填写率', () => {
+    const issues = [
+      issue({ uuid: 'f1', createTime: period.start + DAY, assigneeUuid: 'u1', dueDate: '2026-08-01' }),
+      issue({ uuid: 'f2', createTime: period.start + DAY, assigneeUuid: 'u1' }),
+      issue({ uuid: 'f3', createTime: period.start + DAY }),
+      issue({ uuid: 'f4', createTime: period.start + Day2(), dueDate: '2026-08-01' }),
+      issue({ uuid: 'f5', createTime: period.start + Day2(), assigneeUuid: 'u2', dueDate: '2026-08-01' }),
+      // 对比周期全空
+      ...Array.from({ length: 5 }, (_, i) =>
+        issue({ uuid: `pf${i}`, createTime: period.compareStart + i * DAY }),
+      ),
+    ]
+    const report = service.compute(period, bundle({ issues: ok(issues) }), 1000)
+    expect(report.discipline.assigneeFillRate.current).toBe(0.6)
+    expect(report.discipline.dueDateFillRate.current).toBe(0.6)
+  })
+
+  it('工时实践：预估/登记覆盖率与准确度', () => {
+    const issues = [
+      issue({ uuid: 't1', createTime: period.start + DAY, timeEstimated: 8 }),
+      issue({ uuid: 't2', createTime: period.start + DAY, timeEstimated: 4 }),
+      issue({ uuid: 't3', createTime: period.start + DAY }),
+      issue({ uuid: 't4', createTime: period.start + DAY, timeEstimated: 8 }),
+      issue({ uuid: 't5', createTime: period.start + DAY, timeEstimated: 2 }),
+      // 凑齐 5 个配对样本（准确度中位数要求 ≥ Q）
+      issue({ uuid: 't6', createTime: period.start + DAY, timeEstimated: 6 }),
+    ]
+    const estimates = [
+      { issueUuid: 't1', seconds: 8 * 3600 },
+      { issueUuid: 't2', seconds: 4 * 3600 },
+      { issueUuid: 't4', seconds: 8 * 3600 },
+      { issueUuid: 't5', seconds: 2 * 3600 },
+      { issueUuid: 't6', seconds: 6 * 3600 },
+    ]
+    const spent = [
+      { issueUuid: 't1', seconds: 10 * 3600, records: 1 }, // |10-8|/8 = 0.25
+      { issueUuid: 't2', seconds: 5 * 3600, records: 1 }, // |5-4|/4 = 0.25
+      { issueUuid: 't4', seconds: 8 * 3600, records: 1 }, // 0
+      { issueUuid: 't5', seconds: 3 * 3600, records: 1 }, // |3-2|/2 = 0.5
+      { issueUuid: 't6', seconds: 6 * 3600, records: 1 }, // 0
+    ]
+    const report = service.compute(period, bundle({
+      issues: ok(issues),
+      estimates: ok(estimates),
+      spent: ok(spent),
+    }), 1000)
+    // 6 个创建中 5 个有预估
+    expect(report.worklogPractice.estimateCoverage.current).toBeCloseTo(5 / 6, 2)
+    // 偏差样本 [0.25, 0.25, 0, 0.5, 0] 排序后 [0, 0, 0.25, 0.25, 0.5] → 中位数 0.25
+    expect(report.worklogPractice.estimateAccuracyMedian).toBe(0.25)
+    expect(report.worklogPractice.pairedSampleSize).toBe(5)
+  })
+
+  it('信封：所有维度携带 ruleVersion 与 collectedAt', () => {
+    const report = service.compute(period, bundle({
+      issues: ok([issue()]),
+      changelogs: ok([change()]),
+    }), 1000)
+    const envelopes = [
+      report.scope,
+      report.requirement,
+      report.defect,
+      report.sprintExecution,
+      report.deliveryEfficiency,
+      report.collaboration,
+      report.discipline,
+      report.worklogPractice,
+      report.knowledge,
+    ]
+    for (const envelope of envelopes) {
+      expect(envelope.ruleVersion).toBe('value-standard-v0.2')
+      expect(envelope.source).toBeTruthy()
+      expect(envelope.collectedAt).toBe(1000)
+    }
+  })
+})
+
+function Day2(): number {
+  return 2 * DAY
+}

@@ -116,22 +116,36 @@ export class JobsService {
 
       const projects = await this.collectors.collectProjects(job.teamUuid)
       errors.push(...projects.errors)
-      await this.updateJob(job.jobId, { stage: 'collecting_sprints', progress: 20 })
+      await this.updateJob(job.jobId, { stage: 'collecting_sprints', progress: 15 })
 
       const projectUuids = projects.data.map(p => p.uuid)
       const sprints = await this.collectors.collectSprints(job.teamUuid, projectUuids)
       errors.push(...sprints.errors)
-      await this.updateJob(job.jobId, { stage: 'collecting_issues', progress: 40 })
+      await this.updateJob(job.jobId, { stage: 'collecting_issue_types', progress: 25 })
+
+      // 工作项类型清单（v0.2 类型拆分；失败不阻塞——降级全类型口径）
+      const issueTypes = await this.collectors.collectIssueTypes(job.teamUuid)
+      errors.push(...issueTypes.errors)
+      await this.updateJob(job.jobId, { stage: 'collecting_issues', progress: 35 })
 
       const issues = await this.collectors.collectIssues(job.teamUuid, job.period)
       errors.push(...issues.errors)
-      await this.updateJob(job.jobId, { stage: 'collecting_changelog', progress: 60 })
+      await this.updateJob(job.jobId, { stage: 'collecting_changelog', progress: 50 })
 
       // changelog 只查当前+对比周期内创建的工作项（控制调用量）
       const relevantIssueUuids = issues.data.map(i => i.uuid).slice(0, 900)
       const changelogs = await this.collectors.collectChangelogs(job.teamUuid, relevantIssueUuids)
       errors.push(...changelogs.errors)
-      await this.updateJob(job.jobId, { stage: 'computing_metrics', progress: 70 })
+      await this.updateJob(job.jobId, { stage: 'collecting_worklog', progress: 62 })
+
+      // v0.2：工时（O-A5 团队级 + O-A6 逐项采样）与 Wiki 空间数
+      const estimates = await this.collectors.collectEstimates(job.teamUuid, job.period)
+      errors.push(...estimates.errors)
+      const spent = await this.collectors.collectSpent(job.teamUuid, relevantIssueUuids, 500)
+      errors.push(...spent.errors)
+      const wikiSpaceCount = await this.collectors.collectWikiSpaceCount(job.teamUuid)
+      errors.push(...wikiSpaceCount.errors)
+      await this.updateJob(job.jobId, { stage: 'computing_metrics', progress: 72 })
 
       // 健康度矩阵：探测器逐维度执行（失败维度自动降级无法核验）
       let healthMatrix
@@ -160,7 +174,11 @@ export class JobsService {
       }
       await this.updateJob(job.jobId, { stage: 'saving_snapshot', progress: 85 })
 
-      const valueReport = this.metrics.compute(job.period, { projects, sprints, issues, changelogs }, collectedAt)
+      const valueReport = this.metrics.compute(
+        job.period,
+        { projects, sprints, issueTypes, issues, changelogs, estimates, spent, wikiSpaceCount },
+        collectedAt,
+      )
 
       await this.updateJob(job.jobId, { stage: 'saving_snapshot', progress: 90 })
 
@@ -226,20 +244,35 @@ export class JobsService {
     return values.reduce((sum, v) => sum + (v.coverage ?? 0), 0) / values.length
   }
 
-  /** 规则模板生成默认叙事（可追溯，CSM 可编辑） */
+  /** 规则模板生成默认叙事（value-standard §6 三段式：成果句 + 改善句 + 参与句） */
   private defaultNarrative(report: unknown): Record<string, string> {
     const r = report as {
-      projects?: { newProjects?: number; activeProjects?: number }
-      issues?: { created?: number; firstCompleted?: number }
-      cycleTime?: { p50Hours?: number | null }
-      collaboration?: { participants?: number; manualFieldChanges?: number }
+      scope?: { activeProjects?: { current?: number | null }; newProjects?: number }
+      requirement?: { delivered?: { current?: number | null }; typeSplit?: boolean }
+      defect?: { fixed?: { current?: number | null } }
+      sprintExecution?: { finished?: { current?: number | null } }
+      collaboration?: { participants?: { current?: number | null }; manualActions?: { current?: number | null }; activeWeeks?: number }
+      highlights?: Array<{ text: string }>
     }
     const parts: Record<string, string> = {}
-    parts.summary =
-      `本周期内团队新建项目 ${r.projects?.newProjects ?? 0} 个、活跃项目 ${r.projects?.activeProjects ?? 0} 个；` +
-      `创建工作项 ${r.issues?.created ?? 0} 个、首次完成 ${r.issues?.firstCompleted ?? 0} 个；` +
-      `${r.cycleTime?.p50Hours != null ? `交付周期中位数 ${r.cycleTime.p50Hours} 小时；` : ''}` +
-      `${r.collaboration?.participants ?? 0} 名成员参与了 ${r.collaboration?.manualFieldChanges ?? 0} 次人工协作行为。`
+    const reqLabel = r.requirement?.typeSplit ? '需求' : '工作项'
+    const delivered = r.requirement?.delivered?.current ?? 0
+    const parts1: string[] = []
+    parts1.push(`本周期 ${r.scope?.activeProjects?.current ?? 0} 个活跃项目中，交付${reqLabel} ${delivered} 个`)
+    if (r.defect?.fixed?.current) parts1.push(`修复缺陷 ${r.defect.fixed.current} 个`)
+    if (r.sprintExecution?.finished?.current) parts1.push(`完成迭代 ${r.sprintExecution.finished.current} 个`)
+    parts.summary = parts1.join('、') + '。'
+
+    const hl = r.highlights ?? []
+    if (hl.length) {
+      parts.summary += `与上一周期相比，${hl.slice(0, 2).map(h => h.text).join('；')}。`
+    } else {
+      parts.summary += '核心指标环比基本持平。'
+    }
+
+    const p = r.collaboration?.participants?.current ?? 0
+    const a = r.collaboration?.manualActions?.current ?? 0
+    parts.summary += `${p} 名成员参与了 ${a} 次协作行为，覆盖 ${r.collaboration?.activeWeeks ?? 0} 个自然周。`
     parts.notes = '以上指标由系统按固定口径计算，可编辑本叙事文本；指标本身不可修改。'
     return parts
   }
