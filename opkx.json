@@ -2,7 +2,7 @@
   "app": {
     "id": "app_09b374c462ec4d64",
     "name": "customer-value-health",
-    "version": "v0.1.0",
+    "version": "v0.1.7",
     "desc": "ONES 客户价值与应用健康度报告：按周期生成不可变报告快照，产出客户价值报告、应用健康度报告、增购机会建议和客户版 PDF。",
     "logo": "/public/logo.svg",
     "auth": {
@@ -381,6 +381,374 @@
         },
         {
           "name": "permission_whitelist",
+          "attributes": {
+            "team_uuid": {
+              "type": "string",
+              "length": 32,
+              "required": true
+            },
+            "user_uuid": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "role": {
+              "type": "string",
+              "length": 32,
+              "required": true
+            },
+            "added_by": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "created_at": {
+              "type": "integer",
+              "required": true
+            }
+          },
+          "indexes": [
+            {
+              "name": "idx_whitelist_created",
+              "range_attribute": "created_at",
+              "partition": [
+                "team_uuid"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "dev___installation_info",
+          "attributes": {
+            "installation_id": {
+              "type": "string",
+              "length": 128,
+              "required": true
+            },
+            "shared_secret": {
+              "type": "string",
+              "length": 512,
+              "required": true
+            },
+            "ones_base_url": {
+              "type": "string",
+              "length": 256,
+              "required": true
+            },
+            "status": {
+              "type": "string",
+              "length": 32,
+              "required": true
+            },
+            "time_stamp": {
+              "type": "integer",
+              "required": true
+            },
+            "updated_at": {
+              "type": "integer",
+              "required": true
+            }
+          },
+          "indexes": [
+            {
+              "name": "idx_installation_updated",
+              "range_attribute": "updated_at"
+            }
+          ]
+        },
+        {
+          "name": "dev___report_job",
+          "attributes": {
+            "job_id": {
+              "type": "string",
+              "length": 36,
+              "required": true
+            },
+            "team_uuid": {
+              "type": "string",
+              "length": 32,
+              "required": true
+            },
+            "period_start": {
+              "type": "integer",
+              "required": true
+            },
+            "period_end": {
+              "type": "integer",
+              "required": true
+            },
+            "compare_start": {
+              "type": "integer",
+              "required": true
+            },
+            "compare_end": {
+              "type": "integer",
+              "required": true
+            },
+            "rule_version": {
+              "type": "string",
+              "length": 32,
+              "required": true
+            },
+            "status": {
+              "type": "string",
+              "length": 16,
+              "required": true
+            },
+            "stage": {
+              "type": "string",
+              "length": 32,
+              "required": true
+            },
+            "progress": {
+              "type": "integer",
+              "required": true
+            },
+            "error": {
+              "type": "string",
+              "length": 512,
+              "required": true
+            },
+            "snapshot_key": {
+              "type": "string",
+              "length": 36,
+              "required": true
+            },
+            "requested_by": {
+              "type": "string",
+              "length": 32,
+              "required": true
+            },
+            "created_at": {
+              "type": "integer",
+              "required": true
+            },
+            "updated_at": {
+              "type": "integer",
+              "required": true
+            }
+          },
+          "indexes": [
+            {
+              "name": "idx_job_team_created",
+              "range_attribute": "created_at",
+              "partition": [
+                "team_uuid"
+              ]
+            },
+            {
+              "name": "idx_job_status",
+              "range_attribute": "created_at",
+              "partition": [
+                "status"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "dev___report_snapshot",
+          "attributes": {
+            "snapshot_id": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "job_id": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "team_uuid": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "period_start": {
+              "type": "integer",
+              "required": true
+            },
+            "period_end": {
+              "type": "integer",
+              "required": true
+            },
+            "rule_version": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "metrics_json": {
+              "type": "text",
+              "required": true
+            },
+            "narrative_json": {
+              "type": "text",
+              "required": true
+            },
+            "coverage": {
+              "type": "integer",
+              "required": true
+            },
+            "created_at": {
+              "type": "integer",
+              "required": true
+            }
+          },
+          "indexes": [
+            {
+              "name": "idx_snapshot_team_created",
+              "range_attribute": "created_at",
+              "partition": [
+                "team_uuid"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "dev___narrative_revision",
+          "attributes": {
+            "revision_id": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "snapshot_id": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "editor_uuid": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "narrative_json": {
+              "type": "text",
+              "required": true
+            },
+            "created_at": {
+              "type": "integer",
+              "required": true
+            }
+          },
+          "indexes": [
+            {
+              "name": "idx_revision_snapshot_created",
+              "range_attribute": "created_at",
+              "partition": [
+                "snapshot_id"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "dev___audit_log",
+          "attributes": {
+            "log_id": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "team_uuid": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "actor_uuid": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "action": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "target_type": {
+              "type": "string",
+              "length": 32,
+              "required": true
+            },
+            "target_id": {
+              "type": "string",
+              "length": 64,
+              "required": true
+            },
+            "detail_json": {
+              "type": "text",
+              "required": true
+            },
+            "created_at": {
+              "type": "integer",
+              "required": true
+            }
+          },
+          "indexes": [
+            {
+              "name": "idx_audit_team_created",
+              "range_attribute": "created_at",
+              "partition": [
+                "team_uuid"
+              ]
+            },
+            {
+              "name": "idx_audit_target",
+              "range_attribute": "created_at",
+              "partition": [
+                "target_id"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "dev___export_record",
+          "attributes": {
+            "export_id": {
+              "type": "string",
+              "length": 36,
+              "required": true
+            },
+            "snapshot_id": {
+              "type": "string",
+              "length": 36,
+              "required": true
+            },
+            "team_uuid": {
+              "type": "string",
+              "length": 32,
+              "required": true
+            },
+            "requested_by": {
+              "type": "string",
+              "length": 32,
+              "required": true
+            },
+            "sections_json": {
+              "type": "string",
+              "length": 128,
+              "required": true
+            },
+            "object_key": {
+              "type": "string",
+              "length": 128,
+              "required": true
+            },
+            "created_at": {
+              "type": "integer",
+              "required": true
+            }
+          },
+          "indexes": [
+            {
+              "name": "idx_export_snapshot",
+              "range_attribute": "created_at",
+              "partition": [
+                "snapshot_id"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "dev___permission_whitelist",
           "attributes": {
             "team_uuid": {
               "type": "string",

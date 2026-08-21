@@ -48,11 +48,17 @@ export class AppController {
   @Post('/app_setting_entries')
   @HttpCode(200)
   getCustomEntries() {
+    // 文件名带版本破静态资源缓存：每次发版更新 PAGE_VERSION
+    const PAGE_VERSION = 'v017'
     return {
       entries: [
         {
-          title: '客户价值与健康度',
-          page_url: createWebPageURL('report.html'),
+          title: '客户价值呈现',
+          page_url: createWebPageURL(`${PAGE_VERSION}_value.html`),
+        },
+        {
+          title: '应用健康监测',
+          page_url: createWebPageURL(`${PAGE_VERSION}_health.html`),
         },
       ],
     }
