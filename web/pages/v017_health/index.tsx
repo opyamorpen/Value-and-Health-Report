@@ -35,6 +35,15 @@ type ReportData = {
   createdAt: number
 }
 
+/** 团队选择器条目（GET /api/teams） */
+type TeamInfo = {
+  uuid: string
+  name: string
+  accessible: boolean
+  whitelisted: boolean
+  whitelistEmpty: boolean
+}
+
 /** 后端 metrics_json 兼容两种结构：旧平铺 / 新 {value, health} */
 const normalizeReport = (report: ReportData): { report: ReportData; health: HealthMatrix | null } => {
   const metrics = report.metrics as unknown as Partial<ValueMetrics> & { value?: ValueMetrics; health?: HealthMatrix }
@@ -84,6 +93,7 @@ const KV = ({ label, value }: { label: string; value: React.ReactNode }) => (
 
 const ReportPage = () => {
   const [teamUuid, setTeamUuid] = useState('')
+  const [teams, setTeams] = useState<TeamInfo[]>([])
   const [userUuid, setUserUuid] = useState('')
   const [job, setJob] = useState<JobState | null>(null)
   const [report, setReport] = useState<ReportData | null>(null)
@@ -99,8 +109,22 @@ const ReportPage = () => {
     const init = async () => {
       try {
         const [team, user] = await Promise.all([ONES.getTeamInfo(), ONES.getUserInfo()])
-        setTeamUuid((team as { teamUUID?: string }).teamUUID ?? '')
-        setUserUuid((user as { uuid?: string }).uuid ?? (user as { userUUID?: string }).userUUID ?? '')
+        const currentTeam = (team as { teamUUID?: string }).teamUUID ?? ''
+        const uuid = (user as { uuid?: string }).uuid ?? (user as { userUUID?: string }).userUUID ?? ''
+        setUserUuid(uuid)
+        setTeamUuid(currentTeam)
+        if (currentTeam && uuid) {
+          const resp = await ONES.fetchApp(`/api/teams?userID=${encodeURIComponent(uuid)}`)
+          if (resp.ok) {
+            const data = (await resp.json()) as { teams?: TeamInfo[] }
+            const list = data.teams ?? []
+            setTeams(list)
+            if (!list.some(t => t.uuid === currentTeam)) {
+              const fallback = list.find(t => t.accessible)
+              if (fallback) setTeamUuid(fallback.uuid)
+            }
+          }
+        }
       } catch (error) {
         console.error('[report] init failed:', error)
         setMessage(`上下文获取失败: ${String((error as Error).message)}`)
@@ -111,6 +135,18 @@ const ReportPage = () => {
       if (pollRef.current) clearInterval(pollRef.current)
     }
   }, [])
+
+  /** 切换团队：清空当前团队全部报告状态，以团队为最大分组重新开始 */
+  const switchTeam = (uuid: string) => {
+    if (!uuid || uuid === teamUuid) return
+    if (pollRef.current) clearInterval(pollRef.current)
+    setTeamUuid(uuid)
+    setJob(null)
+    setReport(null)
+    setSnapshots([])
+    setExportUrl('')
+    setMessage('')
+  }
 
   const loadSnapshots = useCallback(async (team: string, user: string) => {
     if (!team || !user) return
@@ -228,6 +264,33 @@ const ReportPage = () => {
         <h1>应用健康监测</h1>
         <p className="subtitle">各能力维度成熟度评估（未配置 / 已配置未活跃 / 活跃使用 / 形成闭环；未购买、不适用、无法核验为旁路状态）</p>
       </header>
+
+      {/* 团队选择器：所有分析以团队为最大分组，先选团队再看数据 */}
+      <section className="team-selector">
+        <label className="team-label" htmlFor="team-select">分析团队</label>
+        <select
+          id="team-select"
+          className="team-select"
+          value={teamUuid}
+          onChange={e => switchTeam(e.target.value)}
+          disabled={busy}
+        >
+          {teams.length === 0 && <option value={teamUuid}>{teamUuid ? `当前团队（${teamUuid}）` : '加载中…'}</option>}
+          {teams.map(t => (
+            <option key={t.uuid} value={t.uuid} disabled={!t.accessible}>
+              {t.name || t.uuid}
+              {!t.accessible ? '（无访问权限）' : t.whitelistEmpty ? '（待初始化白名单）' : ''}
+            </option>
+          ))}
+        </select>
+        {(() => {
+          const active = teams.find(t => t.uuid === teamUuid)
+          if (active?.whitelistEmpty) {
+            return <span className="team-hint">该团队尚未初始化白名单，你将成为首位报告管理员</span>
+          }
+          return null
+        })()}
+      </section>
 
       <section className="toolbar">
         <button className="primary" onClick={createJob} disabled={busy || !teamUuid}>

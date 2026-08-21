@@ -64,6 +64,17 @@ export class WhitelistGuard implements CanActivate {
 
 @Injectable()
 export class WhitelistService {
+  /** 全量条目（团队选择器的权限标注用：单次扫描） */
+  async listAll(): Promise<WhitelistEntity[]> {
+    const result = (await whitelistEntity.query().getMany()) as unknown
+    const rows =
+      (Array.isArray(result) ? result : ((result as { data?: unknown[] })?.data ?? [])) as Array<{
+        key: string
+        value: WhitelistEntity
+      }>
+    return rows.map(r => r.value).filter(v => v != null)
+  }
+
   async list(teamUuid: string) {
     const result = (await whitelistEntity.query().getMany()) as unknown
     const rows =

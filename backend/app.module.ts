@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { ServeStaticModule } from '@nestjs/serve-static'
 import { AppController } from './app.controller'
 import { ProbeController } from './probe.controller'
+import { TeamsController } from './teams.controller'
 import { ReportsApiController } from './reports.controller'
 import { LifecycleService } from './services/lifecycle.service'
 import { OpenApiTokenService } from './services/openapi-token.service'
@@ -35,7 +36,7 @@ if (isProd()) {
 }
 @Module({
   imports,
-  controllers: [AppController, ProbeController, ReportsApiController],
+  controllers: [AppController, ProbeController, TeamsController, ReportsApiController],
   providers: [
     LifecycleService,
     OpenApiTokenService,
