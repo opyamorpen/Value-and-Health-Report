@@ -27,12 +27,18 @@ export type ExportResult = {
   expiresHint: string
 }
 
+type PdfHealthMatrix = {
+  results: Array<{ dimension: string; maturity: string; suggestion?: string }>
+  opportunities: Array<{ moduleName: string; reason: string }>
+}
+
 type PdfReportData = {
   snapshotId: string
   teamUuid: string
   period: { start: number; end: number }
   ruleVersion: string
   coverage: number
+  healthMatrix?: PdfHealthMatrix
   metrics: {
     projects: { newProjects: number; activeProjects: number; statusDistribution: Record<string, number> }
     sprints: { created: number; finished: number; onTimeFinished: number }
@@ -102,7 +108,7 @@ export class PdfService {
       this.renderValueHighlights(doc, report)
     }
     if (sections.healthMatrix) {
-      this.renderHealthPlaceholder(doc)
+      this.renderHealthMatrix(doc, report)
     }
     if (sections.opportunities) {
       this.renderOpportunitiesPlaceholder(doc)
@@ -215,14 +221,33 @@ export class PdfService {
     }
   }
 
-  private renderHealthPlaceholder(doc: PDFKit.PDFDocument) {
-    doc.moveDown(0.8)
+  /** 客户版健康度：仅维度+成熟度+建议；内部原因（reason/接口细节）不进入客户版 PDF */
+  private renderHealthMatrix(doc: PDFKit.PDFDocument, report: PdfReportData) {
+    doc.addPage()
     doc.fontSize(14).fillColor('#1f2733').text('应用健康度')
-    doc.moveDown(0.3)
-    doc
-      .fontSize(9.5)
-      .fillColor('#6b7482')
-      .text('健康度成熟度矩阵将在完整版本中展示（配置 → 活跃 → 闭环评估）。本报告的维度评估基于可验证的开放接口数据。', { lineGap: 3 })
+    doc.moveDown(0.4)
+    const matrix = report.healthMatrix
+    if (!matrix || !matrix.results.length) {
+      doc.fontSize(9.5).fillColor('#6b7482').text('暂无可用的健康度数据。', { lineGap: 3 })
+      return
+    }
+    for (const r of matrix.results) {
+      doc.fontSize(10.5).fillColor('#4a5568').text(`· ${r.dimension}`, { continued: true })
+      doc.fontSize(10.5).fillColor('#1f2733').text(`　${r.maturity}`)
+      if (r.suggestion) {
+        doc.fontSize(9).fillColor('#6b7482').text(`  建议：${r.suggestion}`, { indent: 14 })
+      }
+      doc.moveDown(0.1)
+    }
+    if (matrix.opportunities?.length) {
+      doc.moveDown(0.6)
+      doc.fontSize(12).fillColor('#1f2733').text('增购机会（未购模块不计入健康度）')
+      doc.moveDown(0.2)
+      for (const o of matrix.opportunities) {
+        doc.fontSize(10).fillColor('#4a5568').text(`· ${o.moduleName}：${o.reason}`)
+        doc.moveDown(0.1)
+      }
+    }
   }
 
   private renderOpportunitiesPlaceholder(doc: PDFKit.PDFDocument) {

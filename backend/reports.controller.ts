@@ -179,7 +179,9 @@ export class ReportsApiController {
           period: snapshot.period,
           ruleVersion: snapshot.ruleVersion,
           coverage: snapshot.coverage,
-          metrics: (snapshot.metrics as Record<string, never>) as never,
+          // metrics 兼容：旧平铺 / 新 {value, health}
+          metrics: ((snapshot.metrics as Record<string, unknown>).value ?? snapshot.metrics) as never,
+          healthMatrix: (snapshot.metrics as Record<string, unknown>).health as never,
           narrative: snapshot.narrative,
         },
         body.sections ?? { valueHighlights: true },
