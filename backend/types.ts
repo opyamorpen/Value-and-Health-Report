@@ -155,6 +155,7 @@ export type AuditAction =
   | 'narrative_edited'
   | 'export_generated'
   | 'report_deleted'
+  | 'whitelist_updated'
 
 export type AuditEntry = {
   logId: string

@@ -29,7 +29,7 @@ const createEntity = (name: string) => {
     async delete(key: string): Promise<void> {
       store.delete(key)
     },
-    async query(): Promise<{ getMany(): Promise<{ page_info: object; data: EntityRow[] }> }> {
+    query(): { getMany(): Promise<{ page_info: object; data: EntityRow[] }> } {
       return {
         getMany: async () => ({
           page_info: { count: store.size, has_more: false },
