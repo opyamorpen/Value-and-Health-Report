@@ -2,7 +2,7 @@
   "app": {
     "id": "app_09b374c462ec4d64",
     "name": "customer-value-health",
-    "version": "v0.0.1",
+    "version": "v0.1.0",
     "desc": "ONES 客户价值与应用健康度报告：按周期生成不可变报告快照，产出客户价值报告、应用健康度报告、增购机会建议和客户版 PDF。",
     "logo": "/public/logo.svg",
     "auth": {
