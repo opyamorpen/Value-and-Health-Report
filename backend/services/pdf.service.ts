@@ -32,6 +32,32 @@ type PdfHealthMatrix = {
   opportunities: Array<{ moduleName: string; reason: string }>
 }
 
+type PdfCompared = {
+  current: number | null
+  previous: number | null
+  delta: number | null
+  deltaPercent: number | null
+  deltaPP: number | null
+  trendLabel: string
+  direction: 'up' | 'down' | 'neutral'
+  isImprovement: boolean | null
+  sampleSize: number
+}
+
+type PdfValueMetrics = {
+  scope: { activeProjects: PdfCompared; newProjects: number }
+  requirement: { typeSplit: boolean; created: PdfCompared; delivered: PdfCompared; cycleP50Hours: PdfCompared; onTimeRate: PdfCompared; sprintLinkedRate: PdfCompared }
+  defect: { typeSplit: boolean; found: PdfCompared; fixed: PdfCompared; open: number; fixCycleP50Hours: PdfCompared; reopenRate: PdfCompared }
+  sprintExecution: { finished: PdfCompared; onTimeRate: PdfCompared; deliveredItems: PdfCompared; cadenceWeeks: number }
+  deliveryEfficiency: { cycleP50Hours: PdfCompared; cycleP75Hours: PdfCompared; weeklyThroughput: PdfCompared; onTimeRate: PdfCompared; reopenRate: PdfCompared }
+  collaboration: { participants: PdfCompared; manualActions: PdfCompared; activeWeeks: number }
+  discipline: { assigneeFillRate: PdfCompared; dueDateFillRate: PdfCompared; sprintDateDisciplineRate: PdfCompared; sprintLengthMedianDays: number | null }
+  worklogPractice: { estimateCoverage: PdfCompared; spentCoverage: PdfCompared; estimateAccuracyMedian: number | null; pairedSampleSize: number }
+  knowledge: { wikiLinkedCount: PdfCompared; wikiLinkedRate: PdfCompared; wikiSpaces: number | null }
+  highlights: Array<{ text: string; kind: string }>
+  concerns: Array<{ text: string }>
+}
+
 type PdfReportData = {
   snapshotId: string
   teamUuid: string
@@ -39,14 +65,7 @@ type PdfReportData = {
   ruleVersion: string
   coverage: number
   healthMatrix?: PdfHealthMatrix
-  metrics: {
-    projects: { newProjects: number; activeProjects: number; statusDistribution: Record<string, number> }
-    sprints: { created: number; finished: number; onTimeFinished: number }
-    issues: { created: number; firstCompleted: number; reopened: number }
-    cycleTime: { p50Hours: number | null; p75Hours: number | null; sampleSize: number }
-    collaboration: { manualFieldChanges: number; participants: number }
-    planFulfillment: { total: number; onTime: number; rate: number | null }
-  }
+  metrics: PdfValueMetrics | Record<string, unknown>
   narrative: Record<string, string>
 }
 
@@ -193,24 +212,153 @@ export class PdfService {
     }
   }
 
+  /** 价值板块（value-standard v0.2）：价值亮点 → 四轴分组指标（含环比）→ 需关注；旧结构回退简版 */
   private renderValueHighlights(doc: PDFKit.PDFDocument, report: PdfReportData) {
     doc.addPage()
+    const m = report.metrics
+    const isV2 = (mm: PdfReportData['metrics']): mm is PdfValueMetrics =>
+      typeof mm === 'object' && mm !== null && 'scope' in mm && 'highlights' in mm
+
+    if (!isV2(m)) {
+      this.renderValueHighlightsLegacy(doc, m as Record<string, unknown>)
+      return
+    }
+
+    // 价值亮点（置顶）
+    doc.fontSize(14).fillColor('#1f2733').text('价值亮点')
+    doc.moveDown(0.3)
+    if (m.highlights.length) {
+      for (const h of m.highlights) {
+        doc.fontSize(11).fillColor('#1e8e4e').text(`✓ ${h.text}`, { lineGap: 3 })
+      }
+    } else {
+      doc.fontSize(10).fillColor('#6b7482').text('本周期无显著环比改善亮点。', { lineGap: 3 })
+    }
+    if (m.concerns?.length) {
+      doc.moveDown(0.3)
+      doc.fontSize(11).fillColor('#b25e00')
+      for (const c of m.concerns) {
+        doc.text(`△ ${c.text}`, { lineGap: 3 })
+      }
+    }
+
+    // 环比展示：当前值 + (前值→当前 Δ)
+    const val = (cmp: PdfCompared, kind: 'count' | 'ratio' | 'hours' = 'count'): string => {
+      if (cmp == null || cmp.current == null) return '未知'
+      const base = kind === 'ratio' ? `${Math.round(cmp.current * 100)}%` : kind === 'hours' ? `${cmp.current} 小时` : String(cmp.current)
+      if (cmp.trendLabel === '未知' || cmp.previous == null) return base
+      if (cmp.trendLabel === '基本持平') return `${base}（环比持平）`
+      if (cmp.trendLabel === '新增') return `${base}（新增）`
+      const delta = kind === 'ratio'
+        ? `${cmp.deltaPP != null && cmp.deltaPP > 0 ? '+' : ''}${cmp.deltaPP ?? 0}pp`
+        : `${cmp.deltaPercent != null && cmp.deltaPercent > 0 ? '+' : ''}${cmp.deltaPercent ?? 0}%`
+      return `${base}（环比 ${delta}）`
+    }
+    const plain = (v: number | null, unit = ''): string => (v != null ? `${v}${unit}` : '未知')
+
+    doc.moveDown(0.6)
+    doc.fontSize(14).fillColor('#1f2733').text('价值指标（对比上一周期）')
+    doc.moveDown(0.3)
+
+    const groups: Array<{ title: string; rows: Array<[string, string]> }> = [
+      {
+        title: 'A · 价值成果',
+        rows: [
+          ['需求数', val(m.requirement.created)],
+          ['需求交付量', val(m.requirement.delivered)],
+          ['需求交付周期 P50', val(m.requirement.cycleP50Hours, 'hours')],
+          ['需求按期率', val(m.requirement.onTimeRate, 'ratio')],
+          ['迭代纳入率', val(m.requirement.sprintLinkedRate, 'ratio')],
+          ['缺陷发现 / 修复 / 遗留', `${val(m.defect.found)} / ${val(m.defect.fixed)} / ${m.defect.open}`],
+          ['缺陷修复周期 P50', val(m.defect.fixCycleP50Hours, 'hours')],
+          ['缺陷重开率', val(m.defect.reopenRate, 'ratio')],
+          ['完成迭代数', val(m.sprintExecution.finished)],
+          ['迭代按期率', val(m.sprintExecution.onTimeRate, 'ratio')],
+          ['迭代交付工作项', val(m.sprintExecution.deliveredItems)],
+        ],
+      },
+      {
+        title: 'B · 效率与确定性',
+        rows: [
+          ['交付周期 P50 / P75', `${val(m.deliveryEfficiency.cycleP50Hours, 'hours')} / ${val(m.deliveryEfficiency.cycleP75Hours, 'hours')}`],
+          ['周均完成吞吐', val(m.deliveryEfficiency.weeklyThroughput)],
+          ['按期完成率', val(m.deliveryEfficiency.onTimeRate, 'ratio')],
+          ['重开率', val(m.deliveryEfficiency.reopenRate, 'ratio')],
+        ],
+      },
+      {
+        title: 'C · 协作与管理',
+        rows: [
+          ['协作参与人数', val(m.collaboration.participants)],
+          ['人工协作行为', val(m.collaboration.manualActions)],
+          ['协作持续性', `${m.collaboration.activeWeeks} 个自然周`],
+          ['负责人填写率', val(m.discipline.assigneeFillRate, 'ratio')],
+          ['截止日期填写率', val(m.discipline.dueDateFillRate, 'ratio')],
+          ['迭代日期规范率', val(m.discipline.sprintDateDisciplineRate, 'ratio')],
+          ['工时预估覆盖率', val(m.worklogPractice.estimateCoverage, 'ratio')],
+          ['工时登记覆盖率', val(m.worklogPractice.spentCoverage, 'ratio')],
+          ['预估准确度', m.worklogPractice.estimateAccuracyMedian != null ? `偏差中位数 ${Math.round(m.worklogPractice.estimateAccuracyMedian * 100)}%` : '样本不足'],
+        ],
+      },
+      {
+        title: 'D · 资产沉淀',
+        rows: [
+          ['关联 Wiki 工作项', val(m.knowledge.wikiLinkedCount)],
+          ['知识沉淀率', val(m.knowledge.wikiLinkedRate, 'ratio')],
+          ['Wiki 空间数', plain(m.knowledge.wikiSpaces)],
+        ],
+      },
+    ]
+
+    for (const g of groups) {
+      doc.fontSize(12).fillColor('#1f2733').text(g.title)
+      doc.moveDown(0.15)
+      for (const [label, value] of g.rows) {
+        doc.fontSize(10.5).fillColor('#4a5568').text(`· ${label}`, { continued: true })
+        doc.fontSize(10.5).fillColor('#1f2733').text(`　${value}`)
+        doc.moveDown(0.1)
+      }
+      doc.moveDown(0.25)
+    }
+
+    if (!m.requirement.typeSplit) {
+      doc.fontSize(9.5).fillColor('#8b93a3').text('注：工作项类型映射覆盖率不足，需求/缺陷指标按全类型口径。', { lineGap: 3 })
+    }
+  }
+
+  /** v0.1 旧快照的简版价值板块 */
+  private renderValueHighlightsLegacy(doc: PDFKit.PDFDocument, m: Record<string, unknown>) {
     doc.fontSize(14).fillColor('#1f2733').text('价值亮点')
     doc.moveDown(0.4)
-    const m = report.metrics
+    const pick = <T,>(obj: Record<string, unknown>, path: string): T | undefined =>
+      path.split('.').reduce<unknown>((acc, key) => (acc as Record<string, unknown>)?.[key], obj) as T | undefined
     const rows: Array<[string, string]> = [
-      ['新建项目 / 活跃项目', `${m.projects.newProjects} / ${m.projects.activeProjects}`],
-      ['迭代：新建 / 终态 / 按期', `${m.sprints.created} / ${m.sprints.finished} / ${m.sprints.onTimeFinished}`],
-      ['工作项：创建 / 首次完成 / 重开', `${m.issues.created} / ${m.issues.firstCompleted} / ${m.issues.reopened}`],
+      [
+        '新建项目 / 活跃项目',
+        `${pick<number>(m, 'projects.newProjects') ?? 0} / ${pick<number>(m, 'projects.activeProjects') ?? 0}`,
+      ],
+      [
+        '迭代：终态 / 按期',
+        `${pick<number>(m, 'sprints.finished') ?? 0} / ${pick<number>(m, 'sprints.onTimeFinished') ?? 0}`,
+      ],
+      [
+        '工作项：创建 / 首次完成 / 重开',
+        `${pick<number>(m, 'issues.created') ?? 0} / ${pick<number>(m, 'issues.firstCompleted') ?? 0} / ${pick<number>(m, 'issues.reopened') ?? 0}`,
+      ],
       [
         '交付周期 P50 / P75',
-        m.cycleTime.p50Hours != null ? `${m.cycleTime.p50Hours} / ${m.cycleTime.p75Hours} 小时（n=${m.cycleTime.sampleSize}）` : '样本不足',
+        pick<number>(m, 'cycleTime.p50Hours') != null
+          ? `${pick<number>(m, 'cycleTime.p50Hours')} / ${pick<number>(m, 'cycleTime.p75Hours')} 小时`
+          : '样本不足',
       ],
-      ['协作：人工变更 / 参与人数', `${m.collaboration.manualFieldChanges} / ${m.collaboration.participants}`],
+      [
+        '协作：人工变更 / 参与人数',
+        `${pick<number>(m, 'collaboration.manualFieldChanges') ?? 0} / ${pick<number>(m, 'collaboration.participants') ?? 0}`,
+      ],
       [
         '计划兑现率',
-        m.planFulfillment.rate != null
-          ? `${Math.round(m.planFulfillment.rate * 100)}%（${m.planFulfillment.onTime}/${m.planFulfillment.total}）`
+        pick<number>(m, 'planFulfillment.rate') != null
+          ? `${Math.round((pick<number>(m, 'planFulfillment.rate') ?? 0) * 100)}%`
           : '样本不足',
       ],
     ]
