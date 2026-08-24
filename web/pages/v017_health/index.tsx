@@ -155,9 +155,14 @@ const ReportPage = () => {
     )
     if (resp.ok) {
       const data = (await resp.json()) as { snapshots?: typeof snapshots }
-      setSnapshots(data.snapshots ?? [])
+      const nextSnapshots = data.snapshots ?? []
+      setSnapshots(nextSnapshots)
+      // 首次进入时直接打开最新快照，否则页面只有历史列表而没有报告内容。
+      if (nextSnapshots.length > 0 && !report) {
+        await openSnapshot(nextSnapshots[0].snapshotId)
+      }
     }
-  }, [])
+  }, [report])
 
   useEffect(() => {
     if (teamUuid && userUuid) void loadSnapshots(teamUuid, userUuid)
@@ -195,6 +200,7 @@ const ReportPage = () => {
   const createJob = async () => {
     setMessage('')
     setReport(null)
+    setHealth(null)
     try {
       const resp = await ONES.fetchApp('/api/report-jobs', {
         method: 'POST',
@@ -301,7 +307,7 @@ const ReportPage = () => {
             <div className="progress-fill" style={{ width: `${job?.progress ?? 0}%` }} />
           </div>
         )}
-        {job?.status === 'partial' && <span className="warn">部分数据源失败（见证据页）</span>}
+        {job?.status === 'partial' && <span className="warn" title={job.error || undefined}>部分数据源失败：{job.error || '请重新生成或查看证据'}</span>}
         {job?.status === 'failed' && <span className="error">{job.error || '任务失败'}</span>}
         {message && <span className="info">{message}</span>}
       </section>
@@ -348,6 +354,13 @@ const ReportPage = () => {
                   ))}
                 </div>
               )}
+            </section>
+          )}
+
+          {(!health || health.results.length === 0) && (
+            <section className="health-section health-empty">
+              <h2>应用健康度矩阵</h2>
+              <p>当前快照没有健康度探测结果。请重新生成报告快照；历史版本快照不会自动补算健康度。</p>
             </section>
           )}
 
